@@ -10,11 +10,12 @@
 - [Anisble 與 Jenkins 入門](https://ithelp.ithome.com.tw/users/20103346/ironman/1473)
 - [初探 WebRTC](https://medium.com/@jedy05097952/%E5%88%9D%E6%8E%A2-webrtc-%E6%89%8B%E6%8A%8A%E6%89%8B%E5%BB%BA%E7%AB%8B%E7%B7%9A%E4%B8%8A%E8%A6%96%E8%A8%8A-1-5e9d4702e8e8)
 - [100 Correct Way to do CSS Breakpoints](https://www.freecodecamp.org/news/the-100-correct-way-to-do-css-breakpoints-88d6a5ba1862)
-- [使用Ubuntu Server架設網域名稱伺服器](https://magiclen.org/ubuntu-server-dns/)
+- [使用 Ubuntu Server 架設網域名稱伺服器](https://magiclen.org/ubuntu-server-dns/)
 - [Ubuntu 使用 bind9 架設DNS Server](https://eric0806.blogspot.com/2014/06/ubuntu-bind9-dns-server.html)
 - [How to set up file permissions for Laravel?](https://stackoverflow.com/a/37266353)
 - [nginx + ModSecurity](https://www.mobile01.com/topicdetail.php?f=506&t=5134424)
 - [nginx ingress](https://ithelp.ithome.com.tw/articles/10221704)
+- [Kubernetes 30 天養成計畫](https://ithelp.ithome.com.tw/users/20120468/ironman/2525)
 - [Kubernetes installation guide](https://computingforgeeks.com/deploy-kubernetes-cluster-on-ubuntu-with-kubeadm/)
 - [30 天精通 RxJS](https://blog.jerry-hong.com/series/rxjs/thirty-days-rxjs-00)
 - [重新認識 Vue.js](https://book.vue.tw/preface.html)
@@ -28,5 +29,5 @@
 
 ## 用 PHP 解析 Swagger OpenAPI Json
 - [nikic/php-parser](https://github.com/nikic/PHP-Parser)
-- [C編譯器入門～想懂低階系統從自幹編譯器開始～](https://koshizuow.gitbook.io/compilerbook/intoduction)
+- [C 編譯器入門 ～想懂低階系統從自幹編譯器開始～](https://koshizuow.gitbook.io/compilerbook/intoduction)
 - [How to write a very basic compiler](https://softwareengineering.stackexchange.com/questions/165543/how-to-write-a-very-basic-compiler)
