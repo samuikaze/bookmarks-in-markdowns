@@ -78,6 +78,7 @@
     ```console
     $ sudo mkdir /usr/local/bin/runc
     $ curl https://raw.githubusercontent.com/cri-o/cri-o/main/scripts/get | sudo bash
+    $ sudo systemctl enable --now crio
     ```
 
     或
