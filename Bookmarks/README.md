@@ -31,3 +31,15 @@
 - [nikic/php-parser](https://github.com/nikic/PHP-Parser)
 - [C 編譯器入門 ～想懂低階系統從自幹編譯器開始～](https://koshizuow.gitbook.io/compilerbook/intoduction)
 - [How to write a very basic compiler](https://softwareengineering.stackexchange.com/questions/165543/how-to-write-a-very-basic-compiler)
+
+## DevOps 相關
+- [K8s 安全性相關](https://www.modb.pro/db/464184)
+- [nginx ingress 啟用 GeoIP](https://blog.csdn.net/weixin_45066823/article/details/126742835)
+- [inlets/inlets-operator](https://github.com/inlets/inlets-operator)
+- [HowTo: Nginx Block User Agent](https://www.cyberciti.biz/faq/unix-linux-appleosx-bsd-nginx-block-user-agent/)
+- [How to block specific user agents from connecting through the nginx ingress controller](https://support.tools/post/how-to-block-useragents-ingress-nginx/)
+- [Kubernetes nginx ingress - block requests with bad host headers](https://stackoverflow.com/questions/55133550/kubernetes-nginx-ingress-block-requests-with-bad-host-headers)
+- [Block Bad Host](https://stackoverflow.com/questions/47846521/i-continuously-receive-invalid-http-host-header-error-email-after-i-upgrade-my/47851675#47851675)
+- [Custom nginx ingress configuration](https://kubernetes.github.io/ingress-nginx/examples/customization/custom-configuration/)
+- [nginx ingress configuration options](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/)
+- [Kubectl update configMap](https://stackoverflow.com/questions/49989943/kubectl-update-configmap)
