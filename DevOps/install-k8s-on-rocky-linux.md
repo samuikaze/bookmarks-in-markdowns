@@ -1,7 +1,8 @@
 # Install Kubernetes On Rocky Linux 9
 
 要在 Rocky Linux 9 下安裝 Kubernetes 請依據下方步驟進行安裝
-以下步驟僅適用於本機安裝，雲服務不適用於本文章
+
+※ 以下步驟僅適用於本機安裝，雲服務不適用於本文章
 
 ※ 所有的指令前綴為 `$` 表不需要 root 權限， `#` 則需要 root 權限
 

@@ -21,7 +21,7 @@
 
 ## 讓 Podman 在系統啟動時會自動重啟容器
 
-    ※ 使用 Podman 架設 Registry 請務必執行此指令，否則機器重啟後 Podman 不會自動重啟所有的容器服務
+※ 使用 Podman 架設 Registry 請務必執行此指令，否則機器重啟後 Podman 不會自動重啟所有的容器服務
 
     ```console
     $ sudo systemctl enable podman-restart
@@ -47,7 +47,7 @@
 
 ## 列出目前私有映像儲存庫中既有的映像清單
 
-    ※ 通常若 K8s 的 Pod 拉不到映像檔，可以先用此指令確認 Registry 是否還活著
+※ 通常若 K8s 的 Pod 拉不到映像檔，可以先用此指令確認 Registry 是否還活著
 
     ```console
     $ curl -X GET http://localhost:5000/v2/_catalog
