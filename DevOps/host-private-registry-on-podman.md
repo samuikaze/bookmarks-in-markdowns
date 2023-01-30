@@ -8,14 +8,14 @@
 
 1. 建立儲存映像的資料夾，並設定其擁有者
 
-    ```txt
+    ```console
     $ sudo mkdir -p /var/lib/registry
     $ sudo chown -R $USER:$USER /var/lib/registry
     ```
 
 2. 執行 registry 容器
 
-    ```txt
+    ```console
     $ sudo podman run --privileged -d --name registry -p 5000:5000 -v /var/lib/registry:/var/lib/registry --restart=always registry:2
     ```
 
@@ -23,25 +23,25 @@
 
 1. 先將要推送的映像檔加上標籤
 
-    ```txt
+    ```console
     $ podman tag <ORIGINAL_IMAGE_NAME_WITH_DOMAIN> localhost:5000/<IMAGE_NAME>
     ```
 
 2. 推送映像
 
-    ```txt
+    ```console
     $ podman push localhost:5000/<IMAGE_NAME> --tls-verify=false
     ```
 
 ## 列出目前私有映像儲存庫中既有的映像清單
 
-```txt
+```console
 $ curl -X GET http://localhost:5000/v2/_catalog
 ```
 
 ## 讓 Podman 在系統啟動時會自動重啟容器
 
-```txt
+```console
 $ sudo systemctl enable podman-restart
 ```
 
