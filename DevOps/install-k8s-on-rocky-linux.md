@@ -1,6 +1,7 @@
 # Install Kubernetes On Rocky Linux 9
 
 要在 Rocky Linux 9 下安裝 Kubernetes 請依據下方步驟進行安裝
+以下步驟僅適用於本機安裝，雲服務不適用於本文章
 
 ※ 所有的指令前綴為 `$` 表不需要 root 權限， `#` 則需要 root 權限
 
@@ -71,21 +72,21 @@
     # free -m
     ```
 
-8. 安裝 crio
+8. 安裝 crio (推薦第一種方式，可以直接安裝最新版的 crio)
 
     ```console
-    $ VERSION=1.22
+    $ sudo mkdir /usr/local/bin/runc
+    $ curl https://raw.githubusercontent.com/cri-o/cri-o/main/scripts/get | sudo bash
+    ```
+
+    或
+
+    ```console
+    $ VERSION=<預計要安裝的 K8s 版本>
     $ sudo curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable.repo https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/CentOS_8/devel:kubic:libcontainers:stable.repo
     $ sudo curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable:cri-o:${VERSION}.repo https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:${VERSION}/CentOS_8/devel:kubic:libcontainers:stable:cri-o:${VERSION}.repo
     $ sudo dnf install cri-o cri-tools -y
     $ sudo systemctl enable --now crio
-    ```
-    
-    或
-    
-    ```console
-    $ sudo mkdir /usr/local/bin/runc
-    $ curl https://raw.githubusercontent.com/cri-o/cri-o/main/scripts/get | sudo bash
     ```
 
 9. 開啟防火牆指定的 ports
@@ -131,6 +132,8 @@
 
 14. 初始化 kubeadm
 
+    ※ `--pod-network-cidr=192.168.0.0/16` 中的 `192.168.0.0/16` 可以改為預計讓 pod 使用的網段
+
     ```console
     $ sudo kubeadm init \
         --pod-network-cidr=192.168.0.0/16 \
@@ -144,28 +147,36 @@
     $ sudo cp -f /etc/kubernetes/admin.conf $HOME/.kube/config
     $ sudo chown $(id -u):$(id -g) $HOME/.kube/config
     ```
-16. 讓 Control Plane 機器也可以部屬 Pod
+16. 讓 Control Plane 機器也可以部署 Pod
+
+    ※ 若此指令無效，請執行 `kubectl describe nodes` 去看目前 Control Plane 那台 node 目前的汙點名稱為何，將 `node-role.kubernetes.io/control-plane:NoSchedule` 變更為正確的汙點名稱就可以了
 
     ```console
     $ kubectl taint nodes --all node-role.kubernetes.io/control-plane:NoSchedule-
     ```
 
-17. 部屬 nginx ingress controller
+17. 部署 nginx ingress controller
+
+    ※ 建議每次都從官方的文件中複製 yaml 檔網址，以確保 ingress 版本是最新的穩定版本
 
     ```console
     kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/cloud/deploy.yaml
     ```
 
 18. LoadBalancer 設定外部 IP
-    - 針對 nginx ingress controller 的部屬 yaml 中，spec 新增下面的設定
+    - 針對 nginx ingress controller 的部署 yaml 中，spec 新增下面的設定
+
+    ※ 建議每台 kubernetes 的 node 都設定一組固定的 IP，避免不必要的麻煩
+    ※ 若使用的是雲服務 (例: AWS)，不需設定此項，雲服務會分配一組 IP 給 K8s 使用
 
     ```console
     externalIPs:
     - <機器對外網卡上設定的固定 IP>
     ```
 
-19. 部屬微服務 (Deployments、Service、Ingress、ConfigMap、SecretMap)
+19. 部署微服務與相關設定 (Deployments、Service、Ingress、ConfigMap、SecretMap)
 
+    ※ 請記得先將映像檔 (image) 推到指定的 Registry 中，否則部署後 Pod 將無法正常運作
 ## 其它資料
 
 - [刪除不在預設命名空間的服務](https://stackoverflow.com/a/67517905)
@@ -178,5 +189,5 @@
 - [在 Rocky Linux 上安裝 crio](https://computingforgeeks.com/install-cri-o-container-runtime-on-rocky-linux-almalinux/)
 - [Crio GitHub](https://github.com/cri-o/cri-o#installing-cri-o)
 - [nginx ingress controller](https://kubernetes.github.io/ingress-nginx/deploy/)
-- [讓 Control Plane 可以部屬 Pod](https://blog.csdn.net/lisongyue123/article/details/108365127)
+- [讓 Control Plane 可以部署 Pod](https://blog.csdn.net/lisongyue123/article/details/108365127)
 - [LoadBalancer 設定外部 IP](https://stackoverflow.com/questions/44110876/kubernetes-service-external-ip-pending/54168660#54168660)
