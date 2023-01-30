@@ -84,6 +84,7 @@
     或
     
     ```console
+    $ sudo mkdir /usr/local/bin/runc
     $ curl https://raw.githubusercontent.com/cri-o/cri-o/main/scripts/get | sudo bash
     ```
 
@@ -131,7 +132,7 @@
 14. 初始化 kubeadm
 
     ```console
-    sudo kubeadm init \
+    $ sudo kubeadm init \
         --pod-network-cidr=192.168.0.0/16 \
         --cri-socket unix:///var/run/crio/crio.sock
     ```
