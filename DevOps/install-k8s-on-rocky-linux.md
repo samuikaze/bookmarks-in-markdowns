@@ -147,7 +147,7 @@
 16. 讓 Control Plane 機器也可以部屬 Pod
 
     ```console
-    $ kubectl taint nodes --all node-role.kubernetes.io/master-
+    $ kubectl taint nodes --all node-role.kubernetes.io/control-plane:NoSchedule-
     ```
 
 17. 部屬 nginx ingress controller
