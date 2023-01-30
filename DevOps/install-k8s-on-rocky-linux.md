@@ -84,7 +84,7 @@
     或
     
     ```console
-    curl https://raw.githubusercontent.com/cri-o/cri-o/main/scripts/get | bash -s -- -a arm64
+    $ curl https://raw.githubusercontent.com/cri-o/cri-o/main/scripts/get | sudo bash
     ```
 
 9. 開啟防火牆指定的 ports
