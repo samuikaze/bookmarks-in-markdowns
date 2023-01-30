@@ -12,39 +12,39 @@
 
 1. 設定機器名稱
 
-    ```txt
+    ```console
     # hostnamectl set-hostname kubemaster-01.centlinux.com
     # echo 192.168.116.131 kubemaster-01.centlinux.com kubemaster-01 >> /etc/hosts
     ```
 
 2. 更新系統所有套件至最新
 
-    ```txt
+    ```console
     # dnf update -y
     ```
 
 3. 關閉 SELinux (可以不關)
 
-    ```txt
+    ```console
     # setenforce 0
     # sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
     ```
 
 4. 載入必要的 Linux 核心模組
 
-    ```txt
+    ```console
     # modprobe overlay
     # modprobe br_netfilter
     ```
 
-    ```txt
+    ```console
     # cat > /etc/modules-load.d/k8s.conf << EOF
     > overlay
     > br_netfilter
     > EOF
     ```
 
-    ```txt
+    ```console
     # cat > /etc/sysctl.d/k8s.conf << EOF
     > net.ipv4.ip_forward = 1
     > net.bridge.bridge-nf-call-ip6tables = 1
@@ -54,43 +54,49 @@
 
 5. 套用變更
 
-    ```txt
+    ```console
     # sysctl --system
     ```
 
 6. 關閉 Swap
 
-    ```txt
+    ```console
     # swapoff -a
     # sed -e '/swap/s/^/#/g' -i /etc/fstab
     ```
 
 7. 驗證 Swap 是否已經關閉
 
-    ```txt
+    ```console
     # free -m
     ```
 
 8. 安裝 crio
 
-    ```txt
+    ```console
     $ VERSION=1.22
     $ sudo curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable.repo https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/CentOS_8/devel:kubic:libcontainers:stable.repo
     $ sudo curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable:cri-o:${VERSION}.repo https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:${VERSION}/CentOS_8/devel:kubic:libcontainers:stable:cri-o:${VERSION}.repo
     $ sudo dnf install cri-o cri-tools -y
     $ sudo systemctl enable --now crio
     ```
+    
+    或
+    
+    ```console
+    curl https://raw.githubusercontent.com/cri-o/cri-o/main/scripts/get | bash -s -- -a arm64
+    ```
 
 9. 開啟防火牆指定的 ports
 
-    ```txt
+    ```console
     # firewall-cmd --permanent --add-port={6443,2379,2380,10250,10251,10252}/tcp
     # firewall-cmd --reload
     ```
 
 10. 新增 Repo list
 
-    ```txt
+    ```console
     # cat > /etc/yum.repos.d/kubernetes.repo << EOF
     > [kubernetes]
     > name=Kubernetes
@@ -104,27 +110,27 @@
 
 11. 安裝並啟用 kubelet、kubectl 和 kubeadm
 
-    ```txt
+    ```console
     # dnf install -y {kubelet,kubeadm,kubectl} --disableexcludes=kubernetes
     # systemctl enable --now kubelet.service
     ```
 
 12. 安裝 kubectl bash 指令自動完成
 
-    ```txt
+    ```console
     # source <(kubectl completion bash)
     # kubectl completion bash > /etc/bash_completion.d/kubectl
     ```
 
 13. 拉取設定檔
 
-    ```txt
+    ```console
     $ sudo kubeadm config images pull --cri-socket unix:///var/run/crio/crio.sock
     ```
 
 14. 初始化 kubeadm
 
-    ```txt
+    ```console
     sudo kubeadm init \
         --pod-network-cidr=192.168.0.0/16 \
         --cri-socket unix:///var/run/crio/crio.sock
@@ -132,27 +138,27 @@
 
 15. 讓 kubectl 指令可以不用 sudo 執行
 
-    ```txt
+    ```console
     $ mkdir -p $HOME/.kube
     $ sudo cp -f /etc/kubernetes/admin.conf $HOME/.kube/config
     $ sudo chown $(id -u):$(id -g) $HOME/.kube/config
     ```
 16. 讓 Control Plane 機器也可以部屬 Pod
 
-    ```txt
+    ```console
     $ kubectl taint nodes --all node-role.kubernetes.io/master-
     ```
 
 17. 部屬 nginx ingress controller
 
-    ```txt
+    ```console
     kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/cloud/deploy.yaml
     ```
 
 18. LoadBalancer 設定外部 IP
     - 針對 nginx ingress controller 的部屬 yaml 中，spec 新增下面的設定
 
-    ```txt
+    ```console
     externalIPs:
     - <機器對外網卡上設定的固定 IP>
     ```
@@ -168,6 +174,7 @@
 - [使用 Ansible 在 Rocky Linux 上安裝 k8s](https://computingforgeeks.com/install-kubernetes-cluster-on-rocky-linux-with-kubeadm-crio/)
 - [手動在 Rocky Linux 上安裝 k8s](https://www.centlinux.com/2022/11/install-kubernetes-master-node-rocky-linux.html)
 - [在 Rocky Linux 上安裝 crio](https://computingforgeeks.com/install-cri-o-container-runtime-on-rocky-linux-almalinux/)
+- [Crio GitHub](https://github.com/cri-o/cri-o#installing-cri-o)
 - [nginx ingress controller](https://kubernetes.github.io/ingress-nginx/deploy/)
 - [讓 Control Plane 可以部屬 Pod](https://blog.csdn.net/lisongyue123/article/details/108365127)
 - [LoadBalancer 設定外部 IP](https://stackoverflow.com/questions/44110876/kubernetes-service-external-ip-pending/54168660#54168660)
