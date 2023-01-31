@@ -166,10 +166,10 @@
     ```
 
 18. LoadBalancer 設定外部 IP
-    - 針對 nginx ingress controller 的部署 yaml 中，spec 新增下面的設定
+    - 針對 Services 中 LoadBalancer 的 nginx 服務 spec 新增下列設定
 
     ※ 建議每台 kubernetes 的 node 都設定一組固定的 IP，避免不必要的麻煩
-    ※ 若使用的是雲服務 (例: AWS)，不需設定此項，雲服務會分配一組 IP 給 K8s 使用
+    ※ 若使用的是雲服務 (例: AWS 等)，不需設定此項，雲服務會分配一組 IP 給 K8s 使用
 
     ```console
     externalIPs:
