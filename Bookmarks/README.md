@@ -5,7 +5,6 @@
 ## 筆記/關鍵字
 
 - Cert Manager
-- VirtualBox 版本 6.1.40 r154048 (Qt5.6.2)
 
 ## 未分類書籤
 
