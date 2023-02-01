@@ -31,7 +31,7 @@
 - [Kubernetes 30 天養成計畫](https://ithelp.ithome.com.tw/users/20120468/ironman/2525)
 - [Kubernetes installation guide](https://computingforgeeks.com/deploy-kubernetes-cluster-on-ubuntu-with-kubeadm/)
 
-## Infrastrator
+## Infrastructures
 
 - [使用 Ubuntu Server 架設網域名稱伺服器](https://magiclen.org/ubuntu-server-dns/)
 - [Ubuntu 使用 bind9 架設 DNS Server](https://eric0806.blogspot.com/2014/06/ubuntu-bind9-dns-server.html)
