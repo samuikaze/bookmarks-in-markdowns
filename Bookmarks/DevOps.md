@@ -30,11 +30,14 @@
 - [CI 從入門到入坑](https://ithelp.ithome.com.tw/users/20102562/ironman/987)
 - [Kubernetes 30 天養成計畫](https://ithelp.ithome.com.tw/users/20120468/ironman/2525)
 - [Kubernetes installation guide](https://computingforgeeks.com/deploy-kubernetes-cluster-on-ubuntu-with-kubeadm/)
+- - [[教學] 產生SSH Key並且透過KEY進行免密碼登入](https://xenby.com/b/220-%E6%95%99%E5%AD%B8-%E7%94%A2%E7%94%9Fssh-key%E4%B8%A6%E4%B8%94%E9%80%8F%E9%81%8Ekey%E9%80%B2%E8%A1%8C%E5%85%8D%E5%AF%86%E7%A2%BC%E7%99%BB%E5%85%A5)
+- [myoung34/docker-github-actions-runner](https://github.com/myoung34/docker-github-actions-runner)
 
 ## Infrastructures
 
 - [使用 Ubuntu Server 架設網域名稱伺服器](https://magiclen.org/ubuntu-server-dns/)
 - [Ubuntu 使用 bind9 架設 DNS Server](https://eric0806.blogspot.com/2014/06/ubuntu-bind9-dns-server.html)
+- [Gaia Docs](https://docs.gaia-app.io/getting-started/quick-start/)
 
 ## Log 相關
 
