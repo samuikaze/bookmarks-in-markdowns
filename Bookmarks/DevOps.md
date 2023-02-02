@@ -39,6 +39,10 @@
 - [Ubuntu 使用 bind9 架設 DNS Server](https://eric0806.blogspot.com/2014/06/ubuntu-bind9-dns-server.html)
 - [Gaia Docs](https://docs.gaia-app.io/getting-started/quick-start/)
 
+## 安全性相關
+
+- [How do I force SSH to only allow users with a key to log in?](https://askubuntu.com/questions/346857/how-do-i-force-ssh-to-only-allow-users-with-a-key-to-log-in)
+
 ## Log 相關
 
 - [從日誌 API 認識日誌需求](https://www.ithome.com.tw/voice/106433)
