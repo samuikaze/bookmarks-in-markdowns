@@ -145,6 +145,8 @@
           "nginx.ingress.kubernetes.io/client-body-buffer-size" = "102400m"
           "nginx.ingress.kubernetes.io/client-max-body-size" = "102400m"
           "nginx.ingress.kubernetes.io/client_body_timeout" = "7200"
+          # 若無法透過 Service 與 Endpoint 連上 Pod，請加上下面這行
+          # "nginx.ingress.kubernetes.io/service-upstream" = true
           "nginx.org/client-max-body-size" = "102400m"
           "nginx.org/websocket-services" = "core-service"
         }
@@ -188,3 +190,5 @@
 - [kubernetes_service](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/service)
 - [Failed to create Ingress because: the server could not find the requested resource](https://github.com/hashicorp/terraform-provider-kubernetes/issues/1386#issuecomment-979352830)
 - [Documentation: Prefer "terraform" to "hcl" in Markdown code fences](https://github.com/hashicorp/terraform-provider-aws/issues/17810)
+- [Kubernetes: 502 Bad Gateway for some assets - with Nginx Ingress](https://serverfault.com/questions/954620/kubernetes-502-bad-gateway-for-some-assets-with-nginx-ingress)
+- [Source of "service-upstream" annotation](https://github.com/kubernetes/ingress-nginx/issues/1120#issuecomment-418206748)

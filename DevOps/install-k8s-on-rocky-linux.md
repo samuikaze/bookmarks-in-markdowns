@@ -179,6 +179,16 @@
 19. 部署微服務與相關設定 (Deployments、Service、Ingress、ConfigMap、SecretMap)
 
     ※ 請記得先將映像檔 (image) 推到指定的 Registry 中，否則部署後 Pod 將無法正常運作
+
+    ※ 若 ingress-nginx 無法透過 Service 與 Endpoint 連上 Pod，請將下面這行加到該 App 的 Ingress 的 annotation 中
+
+    ```yaml
+    annotation:
+      ...
+      nginx.ingress.kubernetes.io/service-upstream=true
+      ...
+    ```
+
 ## 其它資料
 
 - [刪除不在預設命名空間的服務](https://stackoverflow.com/a/67517905)
