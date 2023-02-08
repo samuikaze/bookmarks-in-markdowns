@@ -209,3 +209,5 @@
 - [nginx ingress controller](https://kubernetes.github.io/ingress-nginx/deploy/)
 - [讓 Control Plane 可以部署 Pod](https://blog.csdn.net/lisongyue123/article/details/108365127)
 - [LoadBalancer 設定外部 IP](https://stackoverflow.com/questions/44110876/kubernetes-service-external-ip-pending/54168660#54168660)
+- [Kubernetes: 502 Bad Gateway for some assets - with Nginx Ingress](https://serverfault.com/questions/954620/kubernetes-502-bad-gateway-for-some-assets-with-nginx-ingress)
+- [Source of "service-upstream" annotation](https://github.com/kubernetes/ingress-nginx/issues/1120#issuecomment-418206748)
