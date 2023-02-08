@@ -175,6 +175,12 @@
     externalIPs:
     - <機器對外網卡上設定的固定 IP>
     ```
+    
+    或是使用指令直接套用
+    
+    ```console
+    $ kubectl patch svc ingress-nginx-controller -n ingress-nginx -p '{"spec": {"externalIPs": ["<機器對外網卡上設定的固定 IP>"]}}'
+    ```
 
 19. 部署微服務與相關設定 (Deployments、Service、Ingress、ConfigMap、SecretMap)
 
