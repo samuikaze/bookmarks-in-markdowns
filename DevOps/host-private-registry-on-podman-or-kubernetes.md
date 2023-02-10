@@ -23,7 +23,7 @@
 
 ## 讓 Podman 在系統啟動時會自動重啟容器
 
-※ 使用 Podman 架設 Registry 請務必執行此指令，否則機器重啟後 Podman 不會自動重啟所有的容器服務
+> ※ 使用 Podman 架設 Registry 請務必執行此指令，否則機器重啟後 Podman 不會自動重啟所有的容器服務
 
 ```console
 # systemctl enable podman-restart
@@ -33,7 +33,7 @@
 
 1. 先將要推送的映像檔加上標籤
 
-    ※ 映像檔名稱可以利用指令 `podman images` 列出所有已存在的映像檔確認
+    > ※ 映像檔名稱可以利用指令 `podman images` 列出所有已存在的映像檔確認
 
     ```console
     $ podman tag <ORIGINAL_IMAGE_NAME_WITH_DOMAIN> localhost:5000/<IMAGE_NAME>
@@ -41,7 +41,7 @@
 
 2. 推送映像
 
-    ※ 若私有的 Registry 有 SSL，則不須加上 `--tls-verify=false` 參數
+    > ※ 若私有的 Registry 有 SSL，則不須加上 `--tls-verify=false` 參數
 
     ```console
     $ podman push localhost:5000/<IMAGE_NAME> --tls-verify=false
@@ -49,7 +49,7 @@
 
 ## 列出目前私有映像儲存庫中既有的映像清單
 
-※ 通常若 K8s 的 Pod 拉不到映像檔，可以先用此指令確認 Registry 是否還活著
+> ※ 通常若 K8s 的 Pod 拉不到映像檔，可以先用此指令確認 Registry 是否還活著
 
 ```console
 $ curl -X GET http://localhost:5000/v2/_catalog

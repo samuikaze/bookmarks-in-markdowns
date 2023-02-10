@@ -2,9 +2,9 @@
 
 要在 Rocky Linux 9 下安裝 Kubernetes 請依據下方步驟進行安裝
 
-※ 以下步驟僅適用於本機安裝，雲服務不適用於本文章
+> ※ 以下步驟僅適用於本機安裝，雲服務不適用於本文章
 
-※ 所有的指令前綴為 `$` 表不需要 root 權限， `#` 則需要 root 權限
+> ※ 所有的指令前綴為 `$` 表不需要 root 權限， `#` 則需要 root 權限
 
 ## 全自動化懶人安裝法
 
@@ -15,8 +15,8 @@
 1. 設定機器名稱
 
     ```console
-    # hostnamectl set-hostname kubemaster-01.centlinux.com
-    # echo 192.168.116.131 kubemaster-01.centlinux.com kubemaster-01 >> /etc/hosts
+    # hostnamectl set-hostname kubemaster01.smkz.net
+    # echo 10.0.2.15 kubemaster01.smkz.net kubemaster01 >> /etc/hosts
     ```
 
 2. 更新系統所有套件至最新
@@ -25,7 +25,9 @@
     # dnf update -y
     ```
 
-3. 關閉 SELinux (可以不關)
+3. 關閉 SELinux (不推薦)
+
+    > ※ 關閉 SELinux 可能會使伺服器暴露於危險之中，應當保持其開啟，並於需要時設定其策略
 
     ```console
     # setenforce 0
@@ -40,14 +42,14 @@
     ```
 
     ```console
-    # cat > /etc/modules-load.d/k8s.conf << EOF
+    # cat > /etc/modules-load.d/kubernetes.conf << EOF
     > overlay
     > br_netfilter
     > EOF
     ```
 
     ```console
-    # cat > /etc/sysctl.d/k8s.conf << EOF
+    # cat > /etc/sysctl.d/kubernetes.conf << EOF
     > net.ipv4.ip_forward = 1
     > net.bridge.bridge-nf-call-ip6tables = 1
     > net.bridge.bridge-nf-call-iptables = 1
@@ -76,19 +78,19 @@
 8. 安裝 crio (推薦第一種方式，可以直接安裝最新版的 crio)
 
     ```console
-    $ sudo mkdir /usr/local/bin/runc
-    $ curl https://raw.githubusercontent.com/cri-o/cri-o/main/scripts/get | sudo bash
-    $ sudo systemctl enable --now crio
+    # mkdir /usr/local/bin/runc
+    # curl https://raw.githubusercontent.com/cri-o/cri-o/main/scripts/get | bash
+    # systemctl enable --now crio
     ```
 
     或
 
     ```console
-    $ VERSION=<預計要安裝的 K8s 版本>
-    $ sudo curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable.repo https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/CentOS_8/devel:kubic:libcontainers:stable.repo
-    $ sudo curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable:cri-o:${VERSION}.repo https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:${VERSION}/CentOS_8/devel:kubic:libcontainers:stable:cri-o:${VERSION}.repo
-    $ sudo dnf install cri-o cri-tools -y
-    $ sudo systemctl enable --now crio
+    # VERSION=<預計要安裝的 K8s 版本>
+    # curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable.repo https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/CentOS_8/devel:kubic:libcontainers:stable.repo
+    # curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable:cri-o:${VERSION}.repo https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:${VERSION}/CentOS_8/devel:kubic:libcontainers:stable:cri-o:${VERSION}.repo
+    # dnf install cri-o cri-tools -y
+    # systemctl enable --now crio
     ```
 
 9. 開啟防火牆指定的 ports
@@ -129,15 +131,15 @@
 13. 拉取設定檔
 
     ```console
-    $ sudo kubeadm config images pull --cri-socket unix:///var/run/crio/crio.sock
+    # kubeadm config images pull --cri-socket unix:///var/run/crio/crio.sock
     ```
 
 14. 初始化 kubeadm
 
-    ※ `--pod-network-cidr=192.168.0.0/16` 中的 `192.168.0.0/16` 可以改為預計讓 pod 使用的網段
+    > ※ `--pod-network-cidr=192.168.0.0/16` 中的 `192.168.0.0/16` 可以改為預計讓 pod 使用的網段
 
     ```console
-    $ sudo kubeadm init \
+    # kubeadm init \
         --pod-network-cidr=192.168.0.0/16 \
         --cri-socket unix:///var/run/crio/crio.sock
     ```
@@ -146,12 +148,13 @@
 
     ```console
     $ mkdir -p $HOME/.kube
-    $ sudo cp -f /etc/kubernetes/admin.conf $HOME/.kube/config
-    $ sudo chown $(id -u):$(id -g) $HOME/.kube/config
+    # cp -f /etc/kubernetes/admin.conf $HOME/.kube/config
+    # chown $(id -u):$(id -g) $HOME/.kube/config
     ```
+
 16. 讓 Control Plane 機器也可以部署 Pod
 
-    ※ 若此指令無效，請執行 `kubectl describe nodes` 去看目前 Control Plane 那台 node 目前的汙點名稱為何，將 `node-role.kubernetes.io/control-plane:NoSchedule` 變更為正確的汙點名稱就可以了
+    > ※ 若此指令無效，請執行 `kubectl describe nodes` 去看目前 Control Plane 那台 node 目前的汙點名稱為何，將 `node-role.kubernetes.io/control-plane:NoSchedule` 變更為正確的汙點名稱就可以了
 
     ```console
     $ kubectl taint nodes --all node-role.kubernetes.io/control-plane:NoSchedule-
@@ -159,7 +162,7 @@
 
 17. 部署 nginx ingress controller
 
-    ※ 建議每次都從官方的文件中複製 yaml 檔網址，以確保 ingress 版本是最新的穩定版本
+    > ※ 建議每次都從[官方文件](https://kubernetes.github.io/ingress-nginx/deploy/)中複製 yaml 檔網址，以確保 ingress 版本是最新的穩定版本
 
     ```console
     kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/cloud/deploy.yaml
@@ -168,25 +171,26 @@
 18. LoadBalancer 設定外部 IP
     - 針對 Services 中 LoadBalancer 的 nginx 服務 spec 新增下列設定
 
-    ※ 建議每台 kubernetes 的 node 都設定一組固定的 IP，避免不必要的麻煩
-    ※ 若使用的是雲服務 (例: AWS 等)，不需設定此項，雲服務會分配一組 IP 給 K8s 使用
+    > ※ 建議每台 Kubernetes 的 node 都設定一組固定的 IP，避免不必要的麻煩
+
+    > ※ 若使用的是雲服務 (例: AWS 等)，不需設定此項，雲服務會分配一組 IP 給 Kubernetes 使用
 
     ```console
     externalIPs:
     - <機器對外網卡上設定的固定 IP>
     ```
-    
+
     或是使用指令直接套用
-    
+
     ```console
     $ kubectl patch svc ingress-nginx-controller -n ingress-nginx -p '{"spec": {"externalIPs": ["<機器對外網卡上設定的固定 IP>"]}}'
     ```
 
 19. 部署微服務與相關設定 (Deployments、Service、Ingress、ConfigMap、SecretMap)
 
-    ※ 請記得先將映像檔 (image) 推到指定的 Registry 中，否則部署後 Pod 將無法正常運作
+    > ※ 請記得先將映像 (image) 推到指定的 Registry 中，否則部署後 Pod 將無法正常運作
 
-    ※ 若 ingress-nginx 無法透過 Service 與 Endpoint 連上 Pod，請將下面這行加到該 App 的 Ingress 的 annotation 中
+    > ※ 若 ingress-nginx 無法透過 Service 與 Endpoint 連上 Pod，請將下面這行加到該 App 的 Ingress 的 annotation 中
 
     ```yaml
     annotation:

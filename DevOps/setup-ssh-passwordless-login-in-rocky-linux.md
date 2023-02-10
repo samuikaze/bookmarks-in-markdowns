@@ -4,25 +4,25 @@
 
 ## 設定 SSH 使用公鑰驗證身分
 
-※ Windows 系統若無 ssh-keygen，請直接安裝 git 後使用 git-bash 執行下面所有指令
+> ※ Windows 系統若無 ssh-keygen，請直接安裝 git 後使用 git-bash 執行下面所有指令
 
 1. 先在本機新建一個 SSH 的公鑰與私鑰
 
-  ```console
-  $ ssh-keygen
-  ```
-  
+    ```console
+    $ ssh-keygen
+    ```
+
 2. ssh-keygen 詢問鑰匙儲存位置，按 ENTER 預設即可
 3. ssh-keygen 詢問鑰匙密碼，如要建立密碼給公鑰雨私鑰，可以在這邊設定，否則按兩次 ENTER 跳過即可
 4. 將產生的公鑰放到遠端伺服器上
-  
-  ```console
-  ssh-copy-id <Username>@<Remote server IP or domain>
-  ```
-  
-  ※ 若需要將公鑰放到如 GitHub 上，將 id_rsa.pub 檔案的內容全部貼到該服務供應商的設定內即可
-  
-  ※ `id_rsa.pub` 儲存位置為 2. 中的位置，預設儲存位置為 `$HOME/.ssh` 資料夾
+
+    ```console
+    ssh-copy-id <Username>@<Remote server IP or domain>
+    ```
+
+    > ※ 若需要將公鑰放到如 GitHub 上，將 `id_rsa.pub` 檔案的內容全部貼到該服務供應商的設定內即可
+
+    > ※ `id_rsa.pub` 儲存位置為 2. 中的位置，預設儲存位置為 `$HOME/.ssh` 資料夾
 
 5. 完成，可以使用 SSH 嘗試登入遠端伺服器，驗證設定是否有效
 
@@ -33,9 +33,9 @@
 3. 編輯 `/etc/ssh/sshd_config` 檔案，將除 `PubkeyAuthentication` 外的所有驗證全部設為 `no`
 4. 儲存檔案後重啟 sshd 服務
 
-  ```console
-  # systemctl restart sshd.service
-  ```
+    ```console
+    # systemctl restart sshd.service
+    ```
 
 5. 完成
 

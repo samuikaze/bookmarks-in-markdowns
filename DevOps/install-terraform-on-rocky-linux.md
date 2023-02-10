@@ -2,26 +2,26 @@
 
 要在 Rocky Linux 9 下安裝 Terraform 請依據下方步驟進行安裝
 
-※ 所有的指令前綴為 `$` 表不需要 root 權限， `#` 則需要 root 權限
+> ※ 所有的指令前綴為 `$` 表不需要 root 權限， `#` 則需要 root 權限
 
 ## 安裝步驟
 
 1. 安裝 yum-utils
 
     ```console
-    $ sudo yum install yum-utils -y
+    # dnf install yum-utils -y
     ```
 
 2. 加入軟體庫
 
     ```console
-    $ sudo dnf config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+    # dnf config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
     ```
 
 3. 安裝 Terraform
 
     ```console
-    $ sudo dnf install terraform -y
+    # dnf install terraform -y
     ```
 
 ## 使用
@@ -30,7 +30,7 @@
 
 1. 定義供應商 (Provider): 先建立 `provider.tf`
 
-    ※ 若不知道 Kubernetes 的 IP 可以使用指令 `kubectl config view` 檢視
+    > ※ 若不知道 Kubernetes 的 IP 可以使用指令 `kubectl config view` 檢視
 
     ```terraform
     terraform {
@@ -55,11 +55,11 @@
 
 2. 初始化 Terraform: 執行指令 `terraform init -auto-approve`
 
-    ※ 當同時使用 `-auto-approve` 參數時，Terraform 執行前就不會在與操作者確認
+    > ※ 當同時使用 `-auto-approve` 參數時，Terraform 執行前就不會在與操作者確認
 
 3. 依據原本部署到 K8s 上的設定檔 (deployment.yaml) 建立 `deployment.tf`
 
-    ※ 這邊建議可以使用 VSCode + HashiCorp Terraform 套件進行設定檔的撰寫，以下為其中一個範例
+    > ※ 這邊建議可以使用 VSCode + HashiCorp Terraform 套件進行設定檔的撰寫，以下為其中一個範例
 
     ```terraform
     resource "kubernetes_deployment" "demostration" {
@@ -174,7 +174,7 @@
 
 4. 執行 `terraform apply -auto-approve` 進行部署
 
-    ※ 當同時使用 `-auto-approve` 參數時，Terraform 執行前就不會在與操作者確認
+    > ※ 當同時使用 `-auto-approve` 參數時，Terraform 執行前就不會在與操作者確認
 
 5. 完成
 
