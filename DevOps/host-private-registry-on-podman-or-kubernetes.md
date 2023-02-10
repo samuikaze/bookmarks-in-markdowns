@@ -1,22 +1,24 @@
-# Host Private Registry On Podman
+# Host Private Docker Registry on Podman or Kubernetes
 
-要在 Podman 上架設私有映像儲存庫 (Private Image Registry) 請依據下方步驟進行安裝
+## 在 Kubernetes 上架設私有 Docker registry
 
-※ 所有的指令前綴為 `$` 表不需要 root 權限， `#` 則需要 root 權限
+請參考[這邊的文章](https://github.com/samuikaze/registry-in-kubernetes)
 
-## 手動安裝
+## 在 Podman 上架設私有 Docker registry
+
+> ※ 所有的指令前綴為 `$` 表不需要 root 權限， `#` 則需要 root 權限
 
 1. 建立儲存映像的資料夾，並設定其擁有者
 
     ```console
-    $ sudo mkdir -p /var/lib/registry
-    $ sudo chown -R $USER:$USER /var/lib/registry
+    # mkdir -p /var/lib/registry
+    # chown -R $USER:$USER /var/lib/registry
     ```
 
 2. 執行 registry 容器
 
     ```console
-    $ sudo podman run --privileged -d --name registry -p 5000:5000 -v /var/lib/registry:/var/lib/registry --restart=always registry:2
+    # podman run --privileged -d --name registry -p 5000:5000 -v /var/lib/registry:/var/lib/registry --restart=always registry:2
     ```
 
 ## 讓 Podman 在系統啟動時會自動重啟容器
@@ -24,7 +26,7 @@
 ※ 使用 Podman 架設 Registry 請務必執行此指令，否則機器重啟後 Podman 不會自動重啟所有的容器服務
 
 ```console
-$ sudo systemctl enable podman-restart
+# systemctl enable podman-restart
 ```
 
 ## 推送映像檔
