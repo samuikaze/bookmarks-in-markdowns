@@ -20,3 +20,8 @@
 - [設計模式](https://ithelp.ithome.com.tw/articles/10201706)
 - [UML入門：統一建模語言入門](http://www.dotspace.idv.tw/Jyemii/umlcolumn/articles/umlwriting/UMLBasics/UMLBasics.htm)
 - [把花在解釋流程的時間省下來 —複雜的工作分派 讓「泳道圖」清楚說明白](https://www.businesstoday.com.tw/article/category/80407/post/201805040057/)
+- [在k8s上架設ELK教學](https://ithelp.ithome.com.tw/articles/10256470)
+- [OBS-StreamFX](https://github.com/Xaymar/obs-StreamFX)
+- [flask+nginx+WSGI](https://ithelp.ithome.com.tw/articles/10251471)
+- [uWSGI 配置參數講解](https://www.maxlist.xyz/2020/06/20/flask-uwsgi/)
+- [How to Create kubernetes Role for Service Account](https://devopscube.com/create-kubernetes-role/)
