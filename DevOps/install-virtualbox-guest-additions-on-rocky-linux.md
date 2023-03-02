@@ -21,7 +21,7 @@
 3. 安裝必要元件
 
     ```console
-    # dnf install dkms kernel-devel kernel-headers gcc make bzip2 perl elfutils-libelf-devel
+    # dnf install dkms kernel-devel kernel-headers gcc make bzip2 perl elfutils-libelf-devel -y
     ```
 
 4. 更新核心模組
