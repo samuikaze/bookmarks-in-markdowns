@@ -198,6 +198,52 @@
       nginx.ingress.kubernetes.io/service-upstream=true
       ...
     ```
+    
+20. 設定 registry 的登入帳號密碼
+
+    > 由於 Secrets 無法跨命名空間 (namespace) 使用，故如有多個命名空間，每個命名空間都需要部屬一份 Secrets
+    
+    1. 執行以下指令以建立帳號密碼的 Secrets
+
+        > `--docker-email` 為選填，若沒有設定電子郵件，可以省略此行
+
+        > 請注意，命名空間 (Namespace) 請務必與 Pod 相同，否則無法讀到此 Secrets，Secrets 本身的名稱則無限制
+
+        ```txt
+        kubectl create secret docker-registry \
+            -n <APP_NAMESPACE> <SECRET_NAME> \
+            --docker-server=<YOUR_REGISTRY_SERVER> \
+            --docker-username=<REGISTRY_USERNAME> \
+            --docker-password=<REGISTRY_PASSWORD> \
+            --docker-email=<YOUR_EMAIL>
+        ```
+    
+    2. 套用 Secrets 至 Pod 中
+        
+        > 下面兩種方式擇一使用就可以了
+
+        - 直接在 Deployment 中代入 Secrets:
+
+            在 `spec.template.spec` 底下新增下面語句
+
+            > 請注意，Secrets 請務必與 Deployment 部屬的 Pod 所屬的命名空間相同，否則會讀不到
+
+            > 請將 `<YOUR_REGISTRY_CREDENTIALS_SECRETS>` 取代為正確的值
+
+            ```txt
+            imagePullSecrets:
+              - name: <YOUR_REGISTRY_CREDENTIALS_SECRETS>
+            ```
+
+        - 使用 Service Account 方式
+
+            - 打開終端機並執行 `kubectl patch serviceaccount default -n <NAMESPACE> -p '{"imagePullSecrets": [{"name": "<YOUR_REGISTRY_CREDENTIALS_SECRETS>"}]}'`
+
+            > 請將 `<NAMESPACE>` 與 `<YOUR_REGISTRY_CREDENTIALS_SECRETS>` 取代為正確的值
+
+            > 若 Service Account 有特別指定，請將 `default` 調整為該 Service Account 的名稱
+
+    3. 部屬應用程式，完成
 
 ## 其它資料
 
