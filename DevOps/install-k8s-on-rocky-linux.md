@@ -261,3 +261,7 @@
 - [LoadBalancer 設定外部 IP](https://stackoverflow.com/questions/44110876/kubernetes-service-external-ip-pending/54168660#54168660)
 - [Kubernetes: 502 Bad Gateway for some assets - with Nginx Ingress](https://serverfault.com/questions/954620/kubernetes-502-bad-gateway-for-some-assets-with-nginx-ingress)
 - [Source of "service-upstream" annotation](https://github.com/kubernetes/ingress-nginx/issues/1120#issuecomment-418206748)
+- [What are Kubernetes Secrets and Service Accounts?](https://tanzu.vmware.com/developer/guides/platform-security-secrets-sa-what-is/)
+- [Sharing secret across namespaces](https://stackoverflow.com/a/46299290)
+- [Service Account](https://kubernetes.io/docs/concepts/security/service-accounts/)
+- [Using private registry docker images in Kubernetes when launched using docker stack deploy](https://stackoverflow.com/a/57831913)
