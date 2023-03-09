@@ -247,7 +247,21 @@
       ...
     ```
     
-20. 設定 registry 的登入帳號密碼
+20. 安裝 Calico 當作 CNI
+    - 使用以下指令建立 operators
+    
+    ```console
+    $ kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/tigera-operator.yaml
+    ```
+    
+    - 下載 Calico 部屬檔，調整部屬檔設定完後，以 kubectl 套用之
+    
+    ```console
+    $ curl https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/custom-resources.yaml -O
+    $ kubectl create -f custom-resources.yaml
+    ```
+    
+21. 設定 registry 的登入帳號密碼
 
     > 由於 Secrets 無法跨命名空間 (namespace) 使用，故如有多個命名空間，每個命名空間都需要部屬一份 Secrets
     
