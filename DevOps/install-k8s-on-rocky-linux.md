@@ -14,9 +14,11 @@
 
 1. 設定機器名稱
 
+    > `<HOSTNAME> 需符合 FQDN 的規範`
+
     ```console
-    # hostnamectl set-hostname kubemaster01.smkz.net
-    # echo 10.0.2.15 kubemaster01.smkz.net kubemaster01 >> /etc/hosts
+    # hostnamectl set-hostname <HOSTNAME>
+    # echo 10.0.2.15 <HOSTNAME> <COMPUTER_NAME> >> /etc/hosts
     ```
 
 2. 更新系統所有套件至最新
