@@ -173,22 +173,66 @@
     ```
 
 18. LoadBalancer 設定外部 IP
-    - 針對 Services 中 LoadBalancer 的 nginx 服務 spec 新增下列設定
+    - 使用雲服務 (例: AWS 等)可以跳過此項設定，K8s 會自動綁訂雲服務供應商的 Load Balancer IP
+    - 若是使用裸機 (Bare-Metal) 安裝，有以下兩種方式可以設定對外 IP
+        1. 使用 [MetalLB](https://metallb.universe.tf/)
+            - 調整 kube-proxy 設定
+                
+                ```console
+                $ kubectl get configmap kube-proxy -n kube-system -o yaml | \
+                    sed -e "s/strictARP: false/strictARP: true/" | \
+                    kubectl apply -f - -n kube-system
+                ```
+             
+            - 使用下面指令安裝 MetalLB
+            
+                ```console
+                $ kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.9/config/manifests/metallb-native.yaml
+                ```
+                
+            - 新增一份 yaml 檔，並以 kubectl 套用此設定，其中 yaml 檔需包含以下內容:
+            
+                ```yaml
+                # external-ip-pool.yaml
+                apiVersion: metallb.io/v1beta1
+                kind: IPAddressPool
+                metadata:
+                  name: <IP_POOL_NAME>
+                  namespace: metallb-system
+                spec:
+                  addresses:
+                  - <YOUR_IP_POOL_1>
+                  - <YOUR_IP_POOL_2>
+                  - ...
+                
+                ---
+                # l2-advertisement.yaml
+                apiVersion: metallb.io/v1beta1
+                kind: L2Advertisement
+                metadata:
+                  name: l2-advertisement
+                  namespace: metallb-system
+                spec:
+                  ipAddressPools:
+                  - <IP_POOL_NAME>
+                ```
 
-    > ※ 建議每台 Kubernetes 的 node 都設定一組固定的 IP，避免不必要的麻煩
+        2. 針對 Services 中 LoadBalancer 的 nginx 服務 spec 新增下列設定
 
-    > ※ 若使用的是雲服務 (例: AWS 等)，不需設定此項，雲服務會分配一組 IP 給 Kubernetes 使用
+            > 除非有必要，Nginx 官方不推薦使用此方式設定外部 IP
 
-    ```console
-    externalIPs:
-    - <機器對外網卡上設定的固定 IP>
-    ```
+            > ※ 建議每台 Kubernetes 的 node 都設定一組固定的 IP，避免不必要的麻煩
 
-    或是使用指令直接套用
+            ```console
+            externalIPs:
+            - <機器對外網卡上設定的固定 IP>
+            ```
 
-    ```console
-    $ kubectl patch svc ingress-nginx-controller -n ingress-nginx -p '{"spec": {"externalIPs": ["<機器對外網卡上設定的固定 IP>"]}}'
-    ```
+            或是使用指令直接套用
+
+            ```console
+            $ kubectl patch svc ingress-nginx-controller -n ingress-nginx -p '{"spec": {"externalIPs": ["<機器對外網卡上設定的固定 IP>"]}}'
+            ```
 
 19. 部署微服務與相關設定 (Deployments、Service、Ingress、ConfigMap、SecretMap)
 
