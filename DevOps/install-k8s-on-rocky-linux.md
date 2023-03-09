@@ -14,17 +14,19 @@
 
 1. 設定機器名稱
 
+    > 執行指令前請先確認網路是否已經完成設定，特別是 IP 部分，請盡量不要使用 DHCP 自動派發
+
     > `<HOSTNAME> 需符合 FQDN 的規範`
 
     ```console
     # hostnamectl set-hostname <HOSTNAME>
-    # echo 10.0.2.15 <HOSTNAME> <COMPUTER_NAME> >> /etc/hosts
+    # echo <NETWORK_IP> <HOSTNAME> <COMPUTER_NAME> >> /etc/hosts
     ```
 
 2. 更新系統所有套件至最新
 
     ```console
-    # dnf update -y
+    # dnf update --refresh -y
     ```
 
 3. 關閉 SELinux (不推薦)
