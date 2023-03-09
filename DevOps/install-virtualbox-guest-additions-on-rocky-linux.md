@@ -30,14 +30,21 @@
     # dnf update kernel-*
     ```
 
-5. 重新啟動系統
+5. 從 VirtualBox 選單插入 VirtualBox Guest Additions 安裝映像檔
+6. 重新啟動系統
 
     ```console
     # reboot
     ```
+7. 若有共享資料夾的需求，須執行以下指令，以利存取時不用每次都輸入密碼
 
-6. 從 VirtualBox 選單插入 VirtualBox Guest Additions 安裝映像檔
-7. 完成
+    > 請注意，此指令僅適用於目前登入的使用者，如需設定到其他使用者，請將 `$USER` 更改為該使用者的名稱
+
+    ```console
+    $ sudo usermod -aG vboxsf $USER
+    ```
+
+8. 完成
 
 ## 參考資料
 
