@@ -137,6 +137,18 @@
     ```console
     # kubeadm config images pull --cri-socket unix:///var/run/crio/crio.sock
     ```
+    
+14. 安裝 CNI 外掛
+
+    > 請到[這邊](https://github.com/projectcalico/cni-plugin/releases)確認最新的版本是多少
+
+    ```console
+    # VERSION=v3.20.6 && \
+        curl -L -o /opt/cni/bin/calico https://github.com/projectcalico/cni-plugin/releases/download/{VERSION}/calico-amd64 && \
+        chmod 755 /opt/cni/bin/calico && \
+        curl -L -o /opt/cni/bin/calico-ipam https://github.com/projectcalico/cni-plugin/releases/download/{VERSION}/calico-ipam-amd64 && \
+        chmod 755 /opt/cni/bin/calico-ipam
+    ```
 
 14. 初始化 kubeadm
 
