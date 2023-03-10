@@ -137,7 +137,7 @@
     ```console
     # kubeadm config images pull --cri-socket unix:///var/run/crio/crio.sock
     ```
-    
+
 14. 安裝 CNI 外掛
 
     > 請到[這邊](https://github.com/projectcalico/cni-plugin/releases)確認最新的版本是多少
@@ -150,7 +150,7 @@
         chmod 755 /opt/cni/bin/calico-ipam
     ```
 
-14. 初始化 kubeadm
+15. 初始化 kubeadm
 
     > ※ `--pod-network-cidr=192.168.0.0/16` 中的 `192.168.0.0/16` 可以改為預計讓 pod 使用的網段
 
@@ -160,7 +160,7 @@
         --cri-socket unix:///var/run/crio/crio.sock
     ```
 
-15. 讓 kubectl 指令可以不用 sudo 執行
+16. 讓 kubectl 指令可以不用 sudo 執行
 
     ```console
     $ mkdir -p $HOME/.kube
@@ -168,15 +168,29 @@
     # chown $(id -u):$(id -g) $HOME/.kube/config
     ```
 
-16. 讓 Control Plane 機器也可以部署 Pod
+17. 讓 Control Plane 機器也可以部署 Pod
 
     > ※ 若此指令無效，請執行 `kubectl describe nodes` 去看目前 Control Plane 那台 node 目前的汙點名稱為何，將 `node-role.kubernetes.io/control-plane:NoSchedule` 變更為正確的汙點名稱就可以了
 
     ```console
-    $ kubectl taint nodes --all node-role.kubernetes.io/control-plane:NoSchedule-
+    kubectl taint nodes --all node-role.kubernetes.io/control-plane:NoSchedule-
     ```
 
-17. 部署 nginx ingress controller
+18. 安裝 Calico 當作 CNI
+    - 使用以下指令建立 operators
+
+    ```console
+    kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/tigera-operator.yaml
+    ```
+
+    - 下載 Calico 部屬檔，調整部屬檔設定完後，以 kubectl 套用之
+
+    ```console
+    curl https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/custom-resources.yaml -O
+    kubectl create -f custom-resources.yaml
+    ```
+
+19. 部署 nginx ingress controller
 
     > ※ 建議每次都從[官方文件](https://kubernetes.github.io/ingress-nginx/deploy/)中複製 yaml 檔網址，以確保 ingress 版本是最新的穩定版本
 
@@ -184,26 +198,26 @@
     kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/cloud/deploy.yaml
     ```
 
-18. LoadBalancer 設定外部 IP
+20. LoadBalancer 設定外部 IP
     - 使用雲服務 (例: AWS 等)可以跳過此項設定，K8s 會自動綁訂雲服務供應商的 Load Balancer IP
     - 若是使用裸機 (Bare-Metal) 安裝，有以下兩種方式可以設定對外 IP
         1. 使用 [MetalLB](https://metallb.universe.tf/)
             - 調整 kube-proxy 設定
-                
+
                 ```console
                 $ kubectl get configmap kube-proxy -n kube-system -o yaml | \
                     sed -e "s/strictARP: false/strictARP: true/" | \
                     kubectl apply -f - -n kube-system
                 ```
-             
+
             - 使用下面指令安裝 MetalLB
-            
+
                 ```console
-                $ kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.9/config/manifests/metallb-native.yaml
+                kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.9/config/manifests/metallb-native.yaml
                 ```
-                
+
             - 新增一份 yaml 檔，並以 kubectl 套用此設定，其中 yaml 檔需包含以下內容:
-            
+
                 ```yaml
                 # external-ip-pool.yaml
                 apiVersion: metallb.io/v1beta1
@@ -216,7 +230,7 @@
                   - <YOUR_IP_POOL_1>
                   - <YOUR_IP_POOL_2>
                   - ...
-                
+
                 ---
                 # l2-advertisement.yaml
                 apiVersion: metallb.io/v1beta1
@@ -243,10 +257,10 @@
             或是使用指令直接套用
 
             ```console
-            $ kubectl patch svc ingress-nginx-controller -n ingress-nginx -p '{"spec": {"externalIPs": ["<機器對外網卡上設定的固定 IP>"]}}'
+            kubectl patch svc ingress-nginx-controller -n ingress-nginx -p '{"spec": {"externalIPs": ["<機器對外網卡上設定的固定 IP>"]}}'
             ```
 
-19. 部署微服務與相關設定 (Deployments、Service、Ingress、ConfigMap、SecretMap)
+21. 部署微服務與相關設定 (Deployments、Service、Ingress、ConfigMap、SecretMap)
 
     > ※ 請記得先將映像 (image) 推到指定的 Registry 中，否則部署後 Pod 將無法正常運作
 
@@ -258,25 +272,11 @@
       nginx.ingress.kubernetes.io/service-upstream=true
       ...
     ```
-    
-20. 安裝 Calico 當作 CNI
-    - 使用以下指令建立 operators
-    
-    ```console
-    $ kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/tigera-operator.yaml
-    ```
-    
-    - 下載 Calico 部屬檔，調整部屬檔設定完後，以 kubectl 套用之
-    
-    ```console
-    $ curl https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/custom-resources.yaml -O
-    $ kubectl create -f custom-resources.yaml
-    ```
-    
-21. 設定 registry 的登入帳號密碼
+
+22. 設定 registry 的登入帳號密碼
 
     > 由於 Secrets 無法跨命名空間 (namespace) 使用，故如有多個命名空間，每個命名空間都需要部屬一份 Secrets
-    
+
     1. 執行以下指令以建立帳號密碼的 Secrets
 
         > `--docker-email` 為選填，若沒有設定電子郵件，可以省略此行
@@ -291,9 +291,9 @@
             --docker-password=<REGISTRY_PASSWORD> \
             --docker-email=<YOUR_EMAIL>
         ```
-    
+
     2. 套用 Secrets 至 Pod 中
-        
+
         > 下面兩種方式擇一使用就可以了
 
         - 直接在 Deployment 中代入 Secrets:
