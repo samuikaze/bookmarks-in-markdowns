@@ -210,7 +210,7 @@
                     kubectl apply -f - -n kube-system
                 ```
 
-            - 使用下面指令安裝 MetalLB
+            - 使用下面指令或[到官方網站上複製指令](https://metallb.universe.tf/installation/#installation-by-manifest)安裝 MetalLB
 
                 ```console
                 kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.9/config/manifests/metallb-native.yaml
