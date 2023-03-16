@@ -2,9 +2,9 @@
 
 要在 Rocky Linux 9 下安裝 Kubernetes 請依據下方步驟進行安裝
 
-> ※ 以下步驟僅適用於本機安裝，雲服務不適用於本文章
+> ※ 以下步驟僅適用於裸機安裝 (Bare-Metal)，雲服務不適用於本文章
 
-> ※ 所有的指令前綴為 `$` 表不需要 root 權限， `#` 則需要 root 權限
+> ※ 所有的指令前綴為 `$` 表不需要 root 權限， `#` 則需要 root 權限，`>` 表示繼續輸入。
 
 ## 全自動化懶人安裝法
 
@@ -12,11 +12,13 @@
 
 ## 手動安裝
 
-1. 設定機器名稱
+1. 設定機器域名與名稱
+
+    > 這段其實非必要，只是方便測試時不用一直打 IP。
 
     > 執行指令前請先確認網路是否已經完成設定，特別是 IP 部分，請盡量不要使用 DHCP 自動派發
 
-    > `<HOSTNAME> 需符合 FQDN 的規範`
+    > ** \<HOSTNAME\> 需符合 FQDN 的規範**
 
     ```console
     # hostnamectl set-hostname <HOSTNAME>
@@ -29,16 +31,29 @@
     # dnf update --refresh -y
     ```
 
-3. 關閉 SELinux (不推薦)
+3. 關閉 SELinux (**不推薦**)
 
-    > ※ 關閉 SELinux 可能會使伺服器暴露於危險之中，應當保持其開啟，並於需要時設定其策略
+    > **非常不推薦**關閉 SELinux 可能會使伺服器暴露於危險之中，應當保持其開啟，並於需要時設定其策略
 
     ```console
     # setenforce 0
     # sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
     ```
 
-4. 載入必要的 Linux 核心模組
+4. 關閉 firewalld (防火牆)
+
+    > 由於 Calico 和 firewalld 都是相依於 iptables 的實作，保持 firewalld 啟用會導致 Kubernetes 中所有的 Pod 都無法利用 Cluster IP 互相連線，若要保持開啟，則 ingress 中必須要增加 `nginx.ingress.kubernetes.io/service-upstream=true` 的 annotation，但這僅適用於 nginx ingress，若非使用 nginx ingress 或必須使用 Pod IP 相互溝通，則必須關閉 firewalld。
+
+    > Crio 本身有自帶 CNI，但由於文件過少，且未找到如何將防火牆設定帶進來，因此不使用其自帶的 CNI。
+
+    > 後面會利用 Calico 網路策略去管理防火牆的策略
+
+    ```console
+    # systemctl stop firewalld.service
+    # systemctl disable firewalld.service
+    ```
+
+5. 載入必要的 Linux 核心模組
 
     ```console
     # modprobe overlay
@@ -60,26 +75,26 @@
     > EOF
     ```
 
-5. 套用變更
+6. 套用變更
 
     ```console
     # sysctl --system
     ```
 
-6. 關閉 Swap
+7. 關閉 Swap
 
     ```console
     # swapoff -a
     # sed -e '/swap/s/^/#/g' -i /etc/fstab
     ```
 
-7. 驗證 Swap 是否已經關閉
+8. 驗證 Swap 是否已經關閉
 
     ```console
     # free -m
     ```
 
-8. 安裝 crio (推薦第一種方式，可以直接安裝最新版的 crio)
+9. 安裝 crio (推薦第一種方式，可以直接安裝最新版的 crio)
 
     ```console
     # mkdir /usr/local/bin/runc
@@ -95,13 +110,6 @@
     # curl -L -o /etc/yum.repos.d/devel:kubic:libcontainers:stable:cri-o:${VERSION}.repo https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:${VERSION}/CentOS_8/devel:kubic:libcontainers:stable:cri-o:${VERSION}.repo
     # dnf install cri-o cri-tools -y
     # systemctl enable --now crio
-    ```
-
-9. 開啟防火牆指定的 ports
-
-    ```console
-    # firewall-cmd --permanent --add-port={6443,2379,2380,10250,10251,10252}/tcp
-    # firewall-cmd --reload
     ```
 
 10. 新增 Repo list
@@ -138,29 +146,17 @@
     # kubeadm config images pull --cri-socket unix:///var/run/crio/crio.sock
     ```
 
-14. 安裝 CNI 外掛
+14. 初始化 kubeadm
 
-    > 請到[這邊](https://github.com/projectcalico/cni-plugin/releases)確認最新的版本是多少
-
-    ```console
-    # VERSION=v3.20.6 && \
-        curl -L -o /opt/cni/bin/calico https://github.com/projectcalico/cni-plugin/releases/download/{VERSION}/calico-amd64 && \
-        chmod 755 /opt/cni/bin/calico && \
-        curl -L -o /opt/cni/bin/calico-ipam https://github.com/projectcalico/cni-plugin/releases/download/{VERSION}/calico-ipam-amd64 && \
-        chmod 755 /opt/cni/bin/calico-ipam
-    ```
-
-15. 初始化 kubeadm
-
-    > ※ `--pod-network-cidr=192.168.0.0/16` 中的 `192.168.0.0/16` 可以改為預計讓 pod 使用的網段
+    > ※ `<POD_NETWORK_CIDR>` 請更改為預計讓 pod 使用的網段，此設定會影響後續安裝 Calico 的相關設定
 
     ```console
     # kubeadm init \
-        --pod-network-cidr=192.168.0.0/16 \
+        --pod-network-cidr=<POD_NETWORK_CIDR> \
         --cri-socket unix:///var/run/crio/crio.sock
     ```
 
-16. 讓 kubectl 指令可以不用 sudo 執行
+15. 讓 kubectl 指令可以不用 sudo 執行
 
     ```console
     $ mkdir -p $HOME/.kube
@@ -168,7 +164,7 @@
     # chown $(id -u):$(id -g) $HOME/.kube/config
     ```
 
-17. 讓 Control Plane 機器也可以部署 Pod
+16. 讓 Control Plane 機器也可以部署 Pod
 
     > ※ 若此指令無效，請執行 `kubectl describe nodes` 去看目前 Control Plane 那台 node 目前的汙點名稱為何，將 `node-role.kubernetes.io/control-plane:NoSchedule` 變更為正確的汙點名稱就可以了
 
@@ -176,21 +172,70 @@
     kubectl taint nodes --all node-role.kubernetes.io/control-plane:NoSchedule-
     ```
 
-18. 安裝 Calico 當作 CNI
-    - 使用以下指令建立 operators
+17. 安裝 calicoctl
+
+    > 使用雲服務可以跳過此步驟，雲服務供應商會有自己的 CNI 介面
+
+    > 建議每次安裝都到官方網站[複製最新版本的指令](https://docs.tigera.io/calico/3.25/operations/calicoctl/install#install-calicoctl-as-a-binary-on-a-single-host)
 
     ```console
-    kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/tigera-operator.yaml
+    # cd /usr/local/bin
+    # curl -L https://github.com/projectcalico/calico/releases/latest/download/calicoctl-linux-amd64 -o calicoctl
+    # chmod +x ./calicoctl
     ```
 
-    - 下載 Calico 部屬檔，調整部屬檔設定完後，以 kubectl 套用之
+18. 設定 calicoctl 對於 etcd 的連線 (這邊使用 Kubernetes 自帶的 etcd 資料庫)
+
+    > 使用雲服務可以跳過此步驟，雲服務供應商會有自己的 CNI 介面
 
     ```console
-    curl https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/custom-resources.yaml -O
-    kubectl create -f custom-resources.yaml
+    # mkdir /etc/calico
+    # cat > /etc/calico/calicoctl.cfg << EOF
+    > apiVersion: projectcalico.org/v3
+    > kind: CalicoAPIConfig
+    > metadata:
+    > spec:
+    >   datastoreType: 'kubernetes'
+    >   kubeconfig: '/path/to/.kube/config'
+    > EOF
     ```
 
-19. 部署 nginx ingress controller
+19. 避免 NetworkManager 防止 Calico 修改路由表規則
+
+    > 使用雲服務可以跳過此步驟，雲服務供應商會有自己的 CNI 介面
+
+    ```console
+    # cat > /etc/NetworkManager/conf.d/calico.conf << EOF
+    > [keyfile]
+    > unmanaged-devices=interface-name:cali*;interface-name:tunl*;interface-name:vxlan.calico;interface-name:vxlan-v6.calico;interface-name:wireguard.cali;interface-name:wg-v6.cali
+    > EOF
+    ```
+
+20. 安裝 Calico 當作 CNI
+
+    > 使用雲服務可以跳過此步驟，雲服務供應商會有自己的 CNI 介面
+
+    > 這邊都是使用「低於 50 台節點的設定檔」，如需大於 50 台節點的設定檔，請至[官方網站下載](https://docs.tigera.io/calico/3.25/getting-started/kubernetes/self-managed-onprem/onpremises#install-calico)
+
+    - 下載 kubectl 的 yaml 檔案
+
+    ```console
+    $ curl https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/calico.yaml -O
+    ```
+
+    - 若前面的 `<POD_NETWORK_CIDR>` 不是設定為 `192.168.0.0/16`，請在這邊打開文件搜尋 `CALICO_IPV4POOL_CIDR`，把該段 env 註解打開後修改為自己的 Pod 網段即可
+
+    > 官方表示即便不改，Calico 也會自動偵測，如果不放心的話還是改一下比較妥當
+
+    - 執行 `kubectl apply -f calico.yaml` 套用設定檔到 Kubernetes，待所有 Pod 都 Up 後就算安裝完成
+
+    > 安裝完成後部分 Pod 的 IP 可能不是正確的，請利用 Deployment 等方式重啟 Pod 即可。
+
+21. 設定 Calico 的網路策略
+
+    > 目前尚在 POC 中，已知需開啟 6443/TCP、2379/TCP、2380/TCP、10250/TCP、10251/TCP、10252/TCP 連接埠
+
+22. 部署 nginx ingress controller
 
     > ※ 建議每次都從[官方文件](https://kubernetes.github.io/ingress-nginx/deploy/)中複製 yaml 檔網址，以確保 ingress 版本是最新的穩定版本
 
@@ -198,8 +243,10 @@
     kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/cloud/deploy.yaml
     ```
 
-20. LoadBalancer 設定外部 IP
-    - 使用雲服務 (例: AWS 等)可以跳過此項設定，K8s 會自動綁訂雲服務供應商的 Load Balancer IP
+23. LoadBalancer 設定外部 IP
+
+    > 使用雲服務 (例: AWS 等)可以跳過此項設定，K8s 會自動綁訂雲服務供應商的 Load Balancer IP
+
     - 若是使用裸機 (Bare-Metal) 安裝，有以下兩種方式可以設定對外 IP
         1. 使用 [MetalLB](https://metallb.universe.tf/)
             - 調整 kube-proxy 設定
@@ -213,7 +260,7 @@
             - 使用下面指令或[到官方網站上複製指令](https://metallb.universe.tf/installation/#installation-by-manifest)安裝 MetalLB
 
                 ```console
-                kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.9/config/manifests/metallb-native.yaml
+                $ kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.9/config/manifests/metallb-native.yaml
                 ```
 
             - 新增一份 yaml 檔，並以 kubectl 套用此設定，其中 yaml 檔需包含以下內容:
@@ -247,7 +294,7 @@
 
             > 除非有必要，Nginx 官方不推薦使用此方式設定外部 IP
 
-            > ※ 建議每台 Kubernetes 的 node 都設定一組固定的 IP，避免不必要的麻煩
+            > 建議每台 Kubernetes 的 node 都設定一組固定的 IP，避免不必要的麻煩
 
             ```console
             externalIPs:
@@ -257,14 +304,14 @@
             或是使用指令直接套用
 
             ```console
-            kubectl patch svc ingress-nginx-controller -n ingress-nginx -p '{"spec": {"externalIPs": ["<機器對外網卡上設定的固定 IP>"]}}'
+            $ kubectl patch svc ingress-nginx-controller -n ingress-nginx -p '{"spec": {"externalIPs": ["<機器對外網卡上設定的固定 IP>"]}}'
             ```
 
-21. 部署微服務與相關設定 (Deployments、Service、Ingress、ConfigMap、SecretMap)
+24. 部署服務與相關設定 (Deployments、Service、Ingress、ConfigMap、SecretMap)
 
     > ※ 請記得先將映像 (image) 推到指定的 Registry 中，否則部署後 Pod 將無法正常運作
 
-    > ※ 若 ingress-nginx 無法透過 Service 與 Endpoint 連上 Pod，請將下面這行加到該 App 的 Ingress 的 annotation 中
+    > ※ 若 ingress-nginx 無法透過 Pod 的 IP 連上 Pod (未安裝 CNI 或未關閉防火牆)，請將下面這行加到該 App 的 Ingress 的 annotation 中
 
     ```yaml
     annotation:
@@ -273,9 +320,9 @@
       ...
     ```
 
-22. 設定 registry 的登入帳號密碼
+25. 設定 registry 的登入帳號密碼
 
-    > 由於 Secrets 無法跨命名空間 (namespace) 使用，故如有多個命名空間，每個命名空間都需要部屬一份 Secrets
+    > 由於 Secrets 無法跨命名空間 (namespace) 使用，故如有多個命名空間，每個命名空間都需要部署一份 Secrets
 
     1. 執行以下指令以建立帳號密碼的 Secrets
 
@@ -317,7 +364,7 @@
 
             > 若 Service Account 有特別指定，請將 `default` 調整為該 Service Account 的名稱
 
-    3. 部屬應用程式，完成
+    3. 部署應用程式，完成
 
 ## 其它資料
 
@@ -339,3 +386,6 @@
 - [Sharing secret across namespaces](https://stackoverflow.com/a/46299290)
 - [Service Account](https://kubernetes.io/docs/concepts/security/service-accounts/)
 - [Using private registry docker images in Kubernetes when launched using docker stack deploy](https://stackoverflow.com/a/57831913)
+- [Install Calico networking and network policy for on-premises deployments](https://docs.tigera.io/calico/3.25/getting-started/kubernetes/self-managed-onprem/onpremises)
+- [Calico System requirements](https://docs.tigera.io/calico/3.25/getting-started/kubernetes/requirements)
+- [Configure NetworkManager](https://docs.tigera.io/calico/3.25/operations/troubleshoot/troubleshooting#configure-networkmanager)
