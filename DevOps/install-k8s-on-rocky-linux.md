@@ -18,7 +18,7 @@
 
     > 執行指令前請先確認網路是否已經完成設定，特別是 IP 部分，請盡量不要使用 DHCP 自動派發
 
-    > ** \<HOSTNAME\> 需符合 FQDN 的規範**
+    > **&lt;HOSTNAME&gt; 需符合 FQDN 的規範**
 
     ```console
     # hostnamectl set-hostname <HOSTNAME>
@@ -33,7 +33,7 @@
 
 3. 關閉 SELinux (**不推薦**)
 
-    > **非常不推薦**關閉 SELinux 可能會使伺服器暴露於危險之中，應當保持其開啟，並於需要時設定其策略
+    > **非常不推薦**關閉 SELinux，這可能會使伺服器暴露於危險之中，應當保持其開啟，並於需要時設定其策略
 
     ```console
     # setenforce 0
@@ -94,7 +94,8 @@
     # free -m
     ```
 
-9. 安裝 crio (推薦第一種方式，可以直接安裝最新版的 crio)
+9. 安裝 crio
+    - 第一種方式 (推薦)
 
     ```console
     # mkdir /usr/local/bin/runc
@@ -102,7 +103,7 @@
     # systemctl enable --now crio
     ```
 
-    或
+    - 第二種方式
 
     ```console
     # VERSION=<預計要安裝的 K8s 版本>
@@ -203,6 +204,8 @@
 19. 避免 NetworkManager 防止 Calico 修改路由表規則
 
     > 使用雲服務可以跳過此步驟，雲服務供應商會有自己的 CNI 介面
+
+    > 請注意，這邊修改完必須重新開機後才會生效
 
     ```console
     # cat > /etc/NetworkManager/conf.d/calico.conf << EOF
