@@ -236,7 +236,7 @@
 
 21. 設定 Calico 的網路策略
 
-    > 目前尚在 POC 中，已知需開啟 6443/TCP、2379/TCP、2380/TCP、10250/TCP、10251/TCP、10252/TCP 連接埠
+    > POC 階段剩下外網測試，內網已經透過 VM 測試完畢可以使用
 
     > 所有與 calico 相關的網路策略皆須使用 `calicoctl apply -f <FULL_PATH_TO_FILE>` 套用才會生效
     
@@ -403,7 +403,7 @@
               selector: has(host-endpoint)
             ```
         
-        2. 允許所有出站流量，測試 Calico Network Policy 是否正常運作
+        2. 允許所有出站流量
 
             ```yaml
             # calico-outbound-external-traffic.yaml
@@ -433,6 +433,8 @@
               interfaceName: <NETWORK_INTERFACE_NAME>
               # 使用 kubectl describe node 檢視 node 名稱
               node: <NODE_NAME>
+              # 設定此網路介面上預期的 IP 位址
+              expectedIPs: [<IP>]
             ```
             
         4. 設定以 NodePort 暴露的服務
@@ -457,6 +459,41 @@
                     selector: has(host-endpoint)
                     ports: [<SPECIFIC_PORT>]
               selector: has(host-endpoint)
+            ```
+            
+        5. 設定防止 DDoS 攻擊的策略
+
+            ```yaml
+            # dos-deny-list.yaml
+            apiVersion: projectcalico.org/v3
+            kind: GlobalNetworkSet
+            metadata:
+              name: dos-deny-list
+              labels:
+                dos-deny-list: 'true'
+            spec:
+              # 設定要拒絕連線的 IP CIDR
+              nets:
+                - <DISALLOWED_IP_CIDR_1>
+                - <DISALLOWED_IP_CIDR_2>
+                - ...
+            
+            ---
+            # dos-mitigation-policy.yaml
+            apiVersion: projectcalico.org/v3
+            kind: GlobalNetworkPolicy
+            metadata:
+              name: dos-mitigation
+            spec:
+              selector: apply-dos-mitigation == 'true'
+              doNotTrack: true
+              applyOnForward: true
+              types:
+                - Ingress
+              ingress:
+                - action: Deny
+                  source:
+                    selector: dos-deny-list == 'true'
             ```
 
 22. 部署 nginx ingress controller
@@ -611,7 +648,10 @@
 - [Service Account](https://kubernetes.io/docs/concepts/security/service-accounts/)
 - [Using private registry docker images in Kubernetes when launched using docker stack deploy](https://stackoverflow.com/a/57831913)
 - [Install Calico networking and network policy for on-premises deployments](https://docs.tigera.io/calico/3.25/getting-started/kubernetes/self-managed-onprem/onpremises)
+- [Protect hosts tutorial](https://docs.tigera.io/calico/3.25/network-policy/hosts/protect-hosts-tutorial)
 - [Calico System requirements](https://docs.tigera.io/calico/3.25/getting-started/kubernetes/requirements)
 - [Configure NetworkManager](https://docs.tigera.io/calico/3.25/operations/troubleshoot/troubleshooting#configure-networkmanager)
 - [Felix configuration - Calico](https://docs.tigera.io/calico/3.25/reference/resources/felixconfig)
 - [Protect hosts - Calico](https://docs.tigera.io/calico/3.25/network-policy/hosts/protect-hosts)
+- [Calico Network Policy介紹](https://hackmd.io/@yansheng133/BJTyrfK2Y)
+- [Defend against DoS attacks](https://docs.tigera.io/calico/3.25/network-policy/extreme-traffic/defend-dos-attack)
