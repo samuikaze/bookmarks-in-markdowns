@@ -238,6 +238,203 @@
 
     > 目前尚在 POC 中，已知需開啟 6443/TCP、2379/TCP、2380/TCP、10250/TCP、10251/TCP、10252/TCP 連接埠
 
+    > 所有與 calico 相關的網路策略皆須使用 `calicoctl apply -f <FULL_PATH_TO_FILE>` 套用才會生效
+    
+    - 設定開啟的 Port 避免被意外切斷而無法提供服務，以下的埠號由[官方文件提供](https://docs.tigera.io/calico/3.25/network-policy/hosts/protect-hosts#avoid-accidentally-cutting-all-host-connectivity)
+    
+        > 10251 與 10252 連接埠可以看[這篇文章](https://stackoverflow.com/a/67397857)
+
+        > 建議先以指令 `calicoctl get felixconfiguration default --export -o yaml > default-felix-config.yaml` 取出目前設定檔內容再進行修改
+
+        ```yaml
+        # default-felix-config.yaml
+        apiVersion: crd.projectcalico.org/v1
+        kind: FelixConfiguration
+        metadata:
+          name: default
+        spec:
+          bpfLogLevel: ''
+          floatingIPs: Disabled
+          logSeverityScreen: Info
+          reportingInterval: 0s
+          ipipEnabled: true
+          Ipv6Support: true
+          # 如需允許容器到本機的流量，請將註解打開
+          # defaultEndpointToHostAction: Accept
+          # 允許入站流量 (in-bound)
+          FailsafeInboundHostPorts: -|
+            tcp:22,
+            udp:68,
+            tcp:179,
+            tcp:2379,
+            tcp:2380,
+            tcp:5473,
+            tcp:6443,
+            tcp:6666,
+            tcp:6667
+          # 允許出站流量 (out-bound)
+          FailsafeOutboundHostPorts: -|
+            udp:53,
+            udp:67,
+            tcp:179,
+            tcp:2379,
+            tcp:2380,
+            tcp:5473,
+            tcp:6443,
+            tcp:6666,
+            tcp:6667
+        ```
+        
+    - 測試 Calico 全域網路策略
+
+        1. 先套用以下策略測試 Calico 全域網路策略是否正常運作
+
+            > 請務必先執行 Failsafe 設定，也就是前一大項的設定，否則策略套用後可能造成 SSH 服務中斷
+
+            > 請將以下內容存成 yaml 檔案，方便後續清除策略
+
+            ```yaml
+            # calico-allow-internal-traffic.yaml
+                apiVersion: projectcalico.org/v3
+                kind: GlobalNetworkPolicy
+                metadata:
+                  name: allow-cluster-internal-ingress
+                spec:
+                  order: 10
+                  # 指定於 kubernetes NAT 前執行策略
+                  preDNAT: true
+                  applyOnForward: true
+                  # 允許內部入站流量
+                  ingress:
+                    - action: Allow
+                      source:
+                        # 這邊需要允許兩個內部 IP 範圍，一個是節點的 IP，另一個是 Pod 的 IP
+                        # 使用 <IP_ADDR>/<CIDR> 格式撰寫
+                        nets: [10.0.2.15/32, 192.168.0.0/16]
+                  selector: has(host-endpoint)
+
+            ---
+            # calico-drop-external-inbound-traffic.yaml
+            apiVersion: projectcalico.org/v3
+            kind: GlobalNetworkPolicy
+            metadata:
+              name: drop-other-ingress
+            spec:
+              order: 20
+              preDNAT: true
+              applyOnForward: true
+              # 禁止所有入站流量
+              ingress:
+                - action: Deny
+              selector: has(host-endpoint)
+
+            ---
+            # calico-outbound-external-traffic.yaml
+            apiVersion: projectcalico.org/v3
+            kind: GlobalNetworkPolicy
+            metadata:
+              name: deny-outbound-policy
+            spec:
+              order: 10
+              egress:
+                - action: Deny
+              selector: has(host-endpoint)
+
+            ---
+            # calico-host-endpoints.yaml
+            apiVersion: projectcalico.org/v3
+            kind: HostEndpoint
+            metadata:
+              name: host-endpoints-config
+              labels:
+                host-endpoint: ingress
+            spec:
+              # 使用 ifconfig 檢視可連上網際網路的網路介面卡名稱
+              interfaceName: <NETWORK_INTERFACE_NAME>
+              # 使用 kubectl describe node 檢視 node 名稱
+              node: <NODE_NAME>
+            ```
+
+        2. 以 curl 進行測試
+            - 以 `curl https://www.google.com.tw/` 測試是否可以正常連上 Google，若無法連上，表示策略正常運作
+            - 以 `curl http://<ANY_POD_IP_IN_CLUSTER>/` 測試是否可以正常連上任一的 Pod，若可以連上，表示策略正常運作
+        3. 執行 `calicoctl delete -f <TEST_CALICO_FILE_NAME>` 清除策略
+
+        > 清除策略後請務必再次進行 curl 連線 Google 確保這策略是否正常被清除
+        
+    - 設定全域網路策略
+
+        > 以下部分可以全部組成一個 yaml 檔案進行套用
+
+        1. 允許內部流量，並將所有外部流量拒絕掉
+
+            ```yaml
+            # calico-allow-internal-traffic.yaml
+            apiVersion: projectcalico.org/v3
+            kind: GlobalNetworkPolicy
+            metadata:
+              name: allow-cluster-internal-ingress
+            spec:
+              order: 10
+              # 指定於 kubernetes NAT 前執行策略
+              preDNAT: true
+              applyOnForward: true
+              # 允許內部入站流量
+              ingress:
+                - action: Allow
+                  source:
+                    # 這邊需要允許兩個內部 IP 範圍，一個是節點的 IP，另一個是 Pod 的 IP
+                    # 使用 <IP_ADDR>/<CIDR> 格式撰寫
+                    nets: [10.0.2.15/32, 192.168.0.0/16]
+              selector: has(host-endpoint)
+            ---
+            # calico-drop-external-inbound-traffic.yaml
+            apiVersion: projectcalico.org/v3
+            kind: GlobalNetworkPolicy
+            metadata:
+              name: drop-other-ingress
+            spec:
+              order: 20
+              preDNAT: true
+              applyOnForward: true
+              # 禁止所有入站流量
+              ingress:
+                - action: Deny
+              selector: has(host-endpoint)
+            ```
+        
+        2. 允許所有出站流量，測試 Calico Network Policy 是否正常運作
+
+            ```yaml
+            # calico-outbound-external-traffic.yaml
+            apiVersion: projectcalico.org/v3
+            kind: GlobalNetworkPolicy
+            metadata:
+              name: <OUTBOUND_POLICY_NAME>
+            spec:
+              order: 10
+              egress:
+                - action: Allow
+              selector: has(host-endpoint)
+            ```
+        
+        3. 套用 Host Endpoints
+
+            ```yaml
+            # calico-host-endpoints.yaml
+            apiVersion: projectcalico.org/v3
+            kind: HostEndpoint
+            metadata:
+              name: <HOST_ENDPOINT_NAME>
+              labels:
+                host-endpoint: ingress
+            spec:
+              # 使用 ifconfig 檢視可連上網際網路的網路介面卡名稱
+              interfaceName: <NETWORK_INTERFACE_NAME>
+              # 使用 kubectl describe node 檢視 node 名稱
+              node: <NODE_NAME>
+            ```
+
 22. 部署 nginx ingress controller
 
     > ※ 建議每次都從[官方文件](https://kubernetes.github.io/ingress-nginx/deploy/)中複製 yaml 檔網址，以確保 ingress 版本是最新的穩定版本
@@ -392,3 +589,5 @@
 - [Install Calico networking and network policy for on-premises deployments](https://docs.tigera.io/calico/3.25/getting-started/kubernetes/self-managed-onprem/onpremises)
 - [Calico System requirements](https://docs.tigera.io/calico/3.25/getting-started/kubernetes/requirements)
 - [Configure NetworkManager](https://docs.tigera.io/calico/3.25/operations/troubleshoot/troubleshooting#configure-networkmanager)
+- [Felix configuration - Calico](https://docs.tigera.io/calico/3.25/reference/resources/felixconfig)
+- [Protect hosts - Calico](https://docs.tigera.io/calico/3.25/network-policy/hosts/protect-hosts)
