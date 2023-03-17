@@ -434,6 +434,30 @@
               # 使用 kubectl describe node 檢視 node 名稱
               node: <NODE_NAME>
             ```
+            
+        4. 設定以 NodePort 暴露的服務
+
+            > 如要指定特定的節點 (Node) 才可以存取，請在 `metadata.label` 加上 `host-endpoint: <SPECIFIC_NODE_NAME>` 宣告
+
+            ```yaml
+            # node-port-inbound-policy.yaml
+            apiVersion: projectcalico.org/v3
+            kind: GlobalNetworkPolicy
+            metadata:
+              name: <NODEPORT_INBOUND_POLICY_NAME>
+            spec:
+              preDNAT: true
+              applyOnForward: true
+              order: 10
+              # 允許特定 Port 的 TCP 入站流量
+              ingress:
+                - action: Allow
+                  protocol: TCP
+                  destination:
+                    selector: has(host-endpoint)
+                    ports: [<SPECIFIC_PORT>]
+              selector: has(host-endpoint)
+            ```
 
 22. 部署 nginx ingress controller
 
