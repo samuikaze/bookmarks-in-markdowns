@@ -516,6 +516,8 @@
               name: <HOST_ENDPOINT_NAME>
               labels:
                 host-endpoint: ingress
+                # 方面後續套用 Dos 防禦規則使用
+                apply-dos-mitigation: 'true'
             spec:
               # 使用 ifconfig 檢視可連上網際網路的網路介面卡名稱
               interfaceName: <NETWORK_INTERFACE_NAME>
@@ -549,14 +551,14 @@
               selector: has(host-endpoint)
             ```
 
-        5. 設定防止 DDoS 攻擊的策略
+        5. 設定防止 DoS 攻擊的策略
 
             ```yaml
             # dos-deny-list.yaml
             apiVersion: projectcalico.org/v3
             kind: GlobalNetworkSet
             metadata:
-              name: dos-deny-list
+              name: dos-mitigation
               labels:
                 dos-deny-list: 'true'
             spec:
