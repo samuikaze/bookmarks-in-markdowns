@@ -234,14 +234,84 @@
 
     > 安裝完成後部分 Pod 的 IP 可能不是正確的，請利用 Deployment 等方式重啟 Pod 即可。
 
-21. 設定 Calico 的網路策略
+21. 部署 nginx ingress controller
 
-    > POC 階段剩下外網測試，內網已經透過 VM 測試完畢可以使用
+    > ※ 建議每次都從[官方文件](https://kubernetes.github.io/ingress-nginx/deploy/)中複製 yaml 檔網址，以確保 ingress 版本是最新的穩定版本
+
+    ```console
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/cloud/deploy.yaml
+    ```
+
+22. LoadBalancer 設定外部 IP
+
+    > 使用雲服務 (例: AWS 等)可以跳過此項設定，K8s 會自動綁訂雲服務供應商的 Load Balancer IP
+
+    - 若是使用裸機 (Bare-Metal) 安裝，有以下兩種方式可以設定對外 IP
+        1. 使用 [MetalLB](https://metallb.universe.tf/)
+            - 調整 kube-proxy 設定
+
+                ```console
+                $ kubectl get configmap kube-proxy -n kube-system -o yaml | \
+                    sed -e "s/strictARP: false/strictARP: true/" | \
+                    kubectl apply -f - -n kube-system
+                ```
+
+            - 使用下面指令或[到官方網站上複製指令](https://metallb.universe.tf/installation/#installation-by-manifest)安裝 MetalLB
+
+                ```console
+                $ kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.9/config/manifests/metallb-native.yaml
+                ```
+
+            - 新增一份 yaml 檔，並以 kubectl 套用此設定，其中 yaml 檔需包含以下內容:
+
+                ```yaml
+                # external-ip-pool.yaml
+                apiVersion: metallb.io/v1beta1
+                kind: IPAddressPool
+                metadata:
+                  name: <IP_POOL_NAME>
+                  namespace: metallb-system
+                spec:
+                  addresses:
+                  - <YOUR_IP_POOL_1>
+                  - <YOUR_IP_POOL_2>
+                  - ...
+
+                ---
+                # l2-advertisement.yaml
+                apiVersion: metallb.io/v1beta1
+                kind: L2Advertisement
+                metadata:
+                  name: l2-advertisement
+                  namespace: metallb-system
+                spec:
+                  ipAddressPools:
+                  - <IP_POOL_NAME>
+                ```
+
+        2. 針對 Services 中 LoadBalancer 的 nginx 服務 spec 新增下列設定
+
+            > 除非有必要，Nginx 官方不推薦使用此方式設定外部 IP
+
+            > 建議每台 Kubernetes 的 node 都設定一組固定的 IP，避免不必要的麻煩
+
+            ```console
+            externalIPs:
+            - <機器對外網卡上設定的固定 IP>
+            ```
+
+            或是使用指令直接套用
+
+            ```console
+            $ kubectl patch svc ingress-nginx-controller -n ingress-nginx -p '{"spec": {"externalIPs": ["<機器對外網卡上設定的固定 IP>"]}}'
+            ```
+
+23. 設定 Calico 的網路策略
 
     > 所有與 calico 相關的網路策略皆須使用 `calicoctl apply -f <FULL_PATH_TO_FILE>` 套用才會生效
-    
+
     - 設定開啟的 Port 避免被意外切斷而無法提供服務，以下的埠號由[官方文件提供](https://docs.tigera.io/calico/3.25/network-policy/hosts/protect-hosts#avoid-accidentally-cutting-all-host-connectivity)
-    
+
         > 10251 與 10252 連接埠可以看[這篇文章](https://stackoverflow.com/a/67397857)
 
         > 建議先以指令 `calicoctl get felixconfiguration default --export -o yaml > default-felix-config.yaml` 取出目前設定檔內容再進行修改
@@ -262,29 +332,47 @@
           # 如需允許容器到本機的流量，請將註解打開
           # defaultEndpointToHostAction: Accept
           # 允許入站流量 (in-bound)
-          FailsafeInboundHostPorts: -|
-            tcp:22,
-            udp:68,
-            tcp:179,
-            tcp:2379,
-            tcp:2380,
-            tcp:5473,
-            tcp:6443,
-            tcp:6666,
-            tcp:6667
+          FailsafeInboundHostPorts:
+            - protocol: tcp
+              port: 22
+            - protocol: udp
+              port: 68
+            - protocol: tcp
+              port: 179
+            - protocol: tcp
+              port: 2379
+            - protocol: tcp
+              port: 2380
+            - protocol: tcp
+              port: 5473
+            - protocol: tcp
+              port: 6443
+            - protocol: tcp
+              port: 6666
+            - protocol: tcp
+              port: 6667
           # 允許出站流量 (out-bound)
-          FailsafeOutboundHostPorts: -|
-            udp:53,
-            udp:67,
-            tcp:179,
-            tcp:2379,
-            tcp:2380,
-            tcp:5473,
-            tcp:6443,
-            tcp:6666,
-            tcp:6667
+          FailsafeOutboundHostPorts:
+            - protocol: udp
+              port: 53
+            - protocol: udp
+              port: 67
+            - protocol: tcp
+              port: 179
+            - protocol: tcp
+              port: 2379
+            - protocol: tcp
+              port: 2380
+            - protocol: tcp
+              port: 5473
+            - protocol: tcp
+              port: 6443
+            - protocol: tcp
+              port: 6666
+            - protocol: tcp
+              port: 6667
         ```
-        
+
     - 測試 Calico 全域網路策略
 
         1. 先套用以下策略測試 Calico 全域網路策略是否正常運作
@@ -361,7 +449,7 @@
         3. 執行 `calicoctl delete -f <TEST_CALICO_FILE_NAME>` 清除策略
 
         > 清除策略後請務必再次進行 curl 連線 Google 確保這策略是否正常被清除
-        
+
     - 設定全域網路策略
 
         > 以下部分可以全部組成一個 yaml 檔案進行套用
@@ -402,7 +490,7 @@
                 - action: Deny
               selector: has(host-endpoint)
             ```
-        
+
         2. 允許所有出站流量
 
             ```yaml
@@ -417,7 +505,7 @@
                 - action: Allow
               selector: has(host-endpoint)
             ```
-        
+
         3. 套用 Host Endpoints
 
             ```yaml
@@ -436,7 +524,7 @@
               # 設定此網路介面上預期的 IP 位址
               expectedIPs: [<IP>]
             ```
-            
+
         4. 設定以 NodePort 暴露的服務
 
             > 如要指定特定的節點 (Node) 才可以存取，請在 `metadata.label` 加上 `host-endpoint: <SPECIFIC_NODE_NAME>` 宣告
@@ -460,7 +548,7 @@
                     ports: [<SPECIFIC_PORT>]
               selector: has(host-endpoint)
             ```
-            
+
         5. 設定防止 DDoS 攻擊的策略
 
             ```yaml
@@ -477,7 +565,7 @@
                 - <DISALLOWED_IP_CIDR_1>
                 - <DISALLOWED_IP_CIDR_2>
                 - ...
-            
+
             ---
             # dos-mitigation-policy.yaml
             apiVersion: projectcalico.org/v3
@@ -494,78 +582,6 @@
                 - action: Deny
                   source:
                     selector: dos-deny-list == 'true'
-            ```
-
-22. 部署 nginx ingress controller
-
-    > ※ 建議每次都從[官方文件](https://kubernetes.github.io/ingress-nginx/deploy/)中複製 yaml 檔網址，以確保 ingress 版本是最新的穩定版本
-
-    ```console
-    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/cloud/deploy.yaml
-    ```
-
-23. LoadBalancer 設定外部 IP
-
-    > 使用雲服務 (例: AWS 等)可以跳過此項設定，K8s 會自動綁訂雲服務供應商的 Load Balancer IP
-
-    - 若是使用裸機 (Bare-Metal) 安裝，有以下兩種方式可以設定對外 IP
-        1. 使用 [MetalLB](https://metallb.universe.tf/)
-            - 調整 kube-proxy 設定
-
-                ```console
-                $ kubectl get configmap kube-proxy -n kube-system -o yaml | \
-                    sed -e "s/strictARP: false/strictARP: true/" | \
-                    kubectl apply -f - -n kube-system
-                ```
-
-            - 使用下面指令或[到官方網站上複製指令](https://metallb.universe.tf/installation/#installation-by-manifest)安裝 MetalLB
-
-                ```console
-                $ kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.9/config/manifests/metallb-native.yaml
-                ```
-
-            - 新增一份 yaml 檔，並以 kubectl 套用此設定，其中 yaml 檔需包含以下內容:
-
-                ```yaml
-                # external-ip-pool.yaml
-                apiVersion: metallb.io/v1beta1
-                kind: IPAddressPool
-                metadata:
-                  name: <IP_POOL_NAME>
-                  namespace: metallb-system
-                spec:
-                  addresses:
-                  - <YOUR_IP_POOL_1>
-                  - <YOUR_IP_POOL_2>
-                  - ...
-
-                ---
-                # l2-advertisement.yaml
-                apiVersion: metallb.io/v1beta1
-                kind: L2Advertisement
-                metadata:
-                  name: l2-advertisement
-                  namespace: metallb-system
-                spec:
-                  ipAddressPools:
-                  - <IP_POOL_NAME>
-                ```
-
-        2. 針對 Services 中 LoadBalancer 的 nginx 服務 spec 新增下列設定
-
-            > 除非有必要，Nginx 官方不推薦使用此方式設定外部 IP
-
-            > 建議每台 Kubernetes 的 node 都設定一組固定的 IP，避免不必要的麻煩
-
-            ```console
-            externalIPs:
-            - <機器對外網卡上設定的固定 IP>
-            ```
-
-            或是使用指令直接套用
-
-            ```console
-            $ kubectl patch svc ingress-nginx-controller -n ingress-nginx -p '{"spec": {"externalIPs": ["<機器對外網卡上設定的固定 IP>"]}}'
             ```
 
 24. 部署服務與相關設定 (Deployments、Service、Ingress、ConfigMap、SecretMap)
