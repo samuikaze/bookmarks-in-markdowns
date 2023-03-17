@@ -343,6 +343,9 @@
               port: 2379
             - protocol: tcp
               port: 2380
+            # 若有 RDP 遠端桌面需求，請打開註解
+            # - protocol: tcp
+            #   port: 3389
             - protocol: tcp
               port: 5473
             - protocol: tcp
