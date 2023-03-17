@@ -295,23 +295,23 @@
 
             ```yaml
             # calico-allow-internal-traffic.yaml
-                apiVersion: projectcalico.org/v3
-                kind: GlobalNetworkPolicy
-                metadata:
-                  name: allow-cluster-internal-ingress
-                spec:
-                  order: 10
-                  # 指定於 kubernetes NAT 前執行策略
-                  preDNAT: true
-                  applyOnForward: true
-                  # 允許內部入站流量
-                  ingress:
-                    - action: Allow
-                      source:
-                        # 這邊需要允許兩個內部 IP 範圍，一個是節點的 IP，另一個是 Pod 的 IP
-                        # 使用 <IP_ADDR>/<CIDR> 格式撰寫
-                        nets: [10.0.2.15/32, 192.168.0.0/16]
-                  selector: has(host-endpoint)
+            apiVersion: projectcalico.org/v3
+            kind: GlobalNetworkPolicy
+            metadata:
+              name: allow-cluster-internal-ingress
+            spec:
+              order: 10
+              # 指定於 kubernetes NAT 前執行策略
+              preDNAT: true
+              applyOnForward: true
+              # 允許內部入站流量
+              ingress:
+                - action: Allow
+                  source:
+                    # 這邊需要允許兩個內部 IP 範圍，一個是節點的 IP，另一個是 Pod 的 IP
+                    # 使用 <IP_ADDR>/<CIDR> 格式撰寫
+                    nets: [10.0.2.15/32, 192.168.0.0/16]
+              selector: has(host-endpoint)
 
             ---
             # calico-drop-external-inbound-traffic.yaml
