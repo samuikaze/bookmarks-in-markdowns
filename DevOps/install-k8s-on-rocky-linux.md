@@ -318,7 +318,7 @@
 
         ```yaml
         # default-felix-config.yaml
-        apiVersion: crd.projectcalico.org/v1
+        apiVersion: projectcalico.org/v3
         kind: FelixConfiguration
         metadata:
           name: default
