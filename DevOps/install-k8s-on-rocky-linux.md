@@ -234,15 +234,39 @@
 
     > 安裝完成後部分 Pod 的 IP 可能不是正確的，請利用 Deployment 等方式重啟 Pod 即可。
 
-21. 部署 nginx ingress controller
+21. 安裝 Helm
 
-    > ※ 建議每次都從[官方文件](https://kubernetes.github.io/ingress-nginx/deploy/)中複製 yaml 檔網址，以確保 ingress 版本是最新的穩定版本
+    > 此步驟非必要步驟，如果只想使用 kubectl 工具進行 Kubernetes 相關管理，可以跳過此步驟
+
+    > Helm 在更新 nginx-ingress 等功能時非常實用，比起使用 kubectl 去更新還出一堆錯誤，不如使用 Helm 請它幫你管理
+
+    > 下面這行也可以到[官方文檔中複製](https://helm.sh/docs/intro/install/#from-script)
 
     ```console
-    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/cloud/deploy.yaml
+    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
     ```
 
-22. LoadBalancer 設定外部 IP
+22. 部署 nginx ingress controller
+
+    1. 使用 Helm 安裝
+        > 這條指令如果已經安裝過 nginx-ingress，則它會進行更新，若未安裝過，則會進行安裝
+
+        ```console
+        $ helm upgrade --install ingress-nginx ingress-nginx \
+            --repo https://kubernetes.github.io/ingress-nginx \
+            --namespace ingress-nginx --create-namespace
+        ```
+
+    2. 使用 kubectl 安裝
+        > ※ 建議每次都從[官方文件](https://kubernetes.github.io/ingress-nginx/deploy/)中複製 yaml 檔網址，以確保 ingress 版本是最新的穩定版本
+
+        > kubectl 安裝方式在更新版本時非常麻煩，且不穩定，推薦使用 Helm 安裝
+
+        ```console
+        kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/cloud/deploy.yaml
+        ```
+
+23. LoadBalancer 設定外部 IP
 
     > 使用雲服務 (例: AWS 等)可以跳過此項設定，K8s 會自動綁訂雲服務供應商的 Load Balancer IP
 
@@ -256,11 +280,24 @@
                     kubectl apply -f - -n kube-system
                 ```
 
-            - 使用下面指令或[到官方網站上複製指令](https://metallb.universe.tf/installation/#installation-by-manifest)安裝 MetalLB
+            - 安裝
+                1. 使用 Helm 安裝
+                    > 使用 Helm 安裝日後更新時會比較快速且穩定
 
-                ```console
-                $ kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.9/config/manifests/metallb-native.yaml
-                ```
+                    ```console
+                    $ helm repo add metallb https://metallb.github.io/metallb
+                    $ helm install metallb metallb/metallb \
+                        --namespace metallb-system --create-namespace
+                    ```
+
+                2. 使用 kubectl 安裝
+                    > kubectl 安裝方式在更新版本時非常麻煩，且不穩定，推薦使用 Helm 安裝
+
+                    > 使用下面指令或[到官方網站上複製指令](https://metallb.universe.tf/installation/#installation-by-manifest)安裝 MetalLB
+
+                    ```console
+                    $ kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.9/config/manifests/metallb-native.yaml
+                    ```
 
             - 新增一份 yaml 檔，並以 kubectl 套用此設定，其中 yaml 檔需包含以下內容:
 
@@ -306,7 +343,7 @@
             $ kubectl patch svc ingress-nginx-controller -n ingress-nginx -p '{"spec": {"externalIPs": ["<機器對外網卡上設定的固定 IP>"]}}'
             ```
 
-23. 設定 Calico 的網路策略
+24. 設定 Calico 的網路策略
 
     > 所有與 calico 相關的網路策略皆須使用 `calicoctl apply -f <FULL_PATH_TO_FILE>` 套用才會生效
 
@@ -329,6 +366,9 @@
           reportingInterval: 0s
           ipipEnabled: true
           Ipv6Support: true
+          # 如果需要開啟應用程式層級策略，請將下面的註解打開
+          # 網路策略如果是用路徑 (path) 決定可不可以連入者須開啟
+          # policySyncPathPrefix: '/var/run/nodeagent'
           # 如需允許容器到本機的流量，請將註解打開
           # defaultEndpointToHostAction: Accept
           # 允許入站流量 (in-bound)
@@ -589,7 +629,150 @@
                     selector: dos-deny-list == 'true'
             ```
 
-24. 部署服務與相關設定 (Deployments、Service、Ingress、ConfigMap、SecretMap)
+25. 部署 emberstack/kubernetes-reflector
+    > 若不使用 cert-manager 或不需使用反射 (複製) secret 的話可以跳過此步驟
+
+    > 由於 secret 不可跨 namespace，因故須使用此套件讓 cert-manager 可以把憑證複製到不同的 namespace 中
+
+    > 可以參閱[官方文件](https://github.com/emberstack/kubernetes-reflector)
+
+    ```console
+    $ helm repo add emberstack https://emberstack.github.io/helm-charts
+    $ helm repo update
+    $ helm upgrade --install reflector emberstack/reflector
+    ```
+
+26. 部署 cert-manager 進行 TLS 憑證自動更新
+
+    > 請注意，若使用 Let's Encrypt 的 HTTP01 驗證，需開啟連接埠 80
+
+    1. 安裝 cert-manager
+        - 使用 Helm
+            > 使用 Helm 安裝日後更新時會比較快速且穩定
+
+            ```console
+            $ helm repo add jetstack https://charts.jetstack.io
+            $ helm repo update
+            $ helm install \
+                cert-manager jetstack/cert-manager \
+                --namespace cert-manager \
+                --create-namespace \
+                --version v1.11.0 \
+                --set installCRDs=true
+            ```
+
+        - 使用 kubectl
+            > kubectl 安裝方式在更新版本時非常麻煩，且不穩定，推薦使用 Helm 安裝
+
+            ```console
+            $ kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
+            ```
+
+            > Google Kubernetes Engine 可能會發生權限錯誤的問題，如使用 GKE 無法安裝，請接著套用下面的指令
+
+            ```console
+            kubectl create clusterrolebinding cluster-admin-binding \
+                --clusterrole=cluster-admin \
+                --user=$(gcloud config get-value core/account)
+            ```
+
+    2. 建立 Issuer 和 Certificate 宣告，並以 `kubectl apply -f <YAML_NAME>` 套用
+
+        ```yaml
+        # issuer.yaml
+        apiVersion: cert-manager.io/v1
+        # 如有 namespace 的問題，kind 請改用 ClusterIssuer
+        kind: Issuer
+        metadata:
+          name: <ISSUER_NAME>
+          # 這邊統一宣告給 cert-manager
+          namespace: cert-manager
+        spec:
+          acme:
+            # ACME 伺服器
+            # 測試請使用 staging 伺服器以避免超過申請限制
+            server: https://acme-staging-v02.api.letsencrypt.org/directory
+            # 正式申請請將上面這行註解掉後打開下一行的註解
+            # server: https://acme-v02.api.letsencrypt.org/directory
+            email: <YOUR_EMAIL_ADDRESS>
+            # ACME 挑戰成功後儲存憑證的 secret 名稱
+            privateKeySecretRef:
+              name: <TLS_SECRET_NAME>
+            # 啟用 HTTP-01 挑戰提供者
+            solvers:
+              # 空白的 'selector' 表示此 solver 處理所有的域名
+              - selector: {}
+                http01:
+                  ingress:
+                    class: nginx
+
+        ---
+        # certificate.yaml
+        apiVersion: cert-manager.io/v1
+        kind: Certificate
+        metadata:
+          # 這個可以用域名當名稱，例: example-com
+          name: <CERTIFICATE_NAME>
+          # 這邊統一宣告給 cert-manager
+          namespace: cert-manager
+        spec:
+          secretName: <TLS_SECRET_NAME>
+          issuerRef:
+            name: <ISSUER_NAME>
+            # 如果這個 Issuer 種類是 ClusterIssuer，請把下面這行註解打開
+            # kind: ClusterIssuer
+          # 如有頂級域名請宣告在這邊
+          commonName: <YOUR_DOMAIN>
+          # 子域名才宣告在這邊
+          dnsNames:
+            - <SUB_DOMAIN_1>
+            - <SUB_DOMAIN_2>
+            - ...
+          secretTemplate:
+            annotations:
+              # 允許反射 (複製)
+              reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
+              # 控制要反射的目標 namespace，僅允許逗號分隔的字串或正規表達式
+              # 這邊宣告的 namespace 若沒有先建立，則不會被反射
+              reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: <NAMESPACES>
+        ```
+
+    3. Calico 新增允許 80/TCP 流量
+
+        > 如果前面的網路策略有儲存成一份 yaml 檔，請直接修改它後進行套用，如果沒有請先取出目前的設定值並修改後再進行套用，**否則既有的策略可能會被洗掉**
+
+        > 重申一遍，套用網路策略請一律以 `calicoctl apply -f <POLICY_FILE>` 進行套用，避免策略沒有成功套用
+
+        > 除了 Calico 外，若有路由器或防火牆，請記得也要允許 80/TCP 的流量
+
+        ```yaml
+        # node-port-inbound-policy.yaml
+        apiVersion: projectcalico.org/v3
+        kind: GlobalNetworkPolicy
+        metadata:
+          name: <NODEPORT_INBOUND_POLICY_NAME>
+        spec:
+          preDNAT: true
+          applyOnForward: true
+          order: 10
+          # 允許特定 Port 的 TCP 入站流量
+          ingress:
+            - action: Allow
+              protocol: TCP
+              destination:
+                selector: has(host-endpoint)
+                ports: [80]
+          selector: has(host-endpoint)
+        ```
+
+    4. 使用指令 `kubectl get challenges --all-namespaces` 看目前 ACME 挑戰的狀態，直至成功為止
+        > cert-manager 會起一個 solver 的 Pod、Service 和 Ingress，完成後這些資源都會被自動移除
+
+        > 挑戰成功的話，secret 會有 `tls.crt` 和 `tls.key` 兩個鍵值對，未成功前只會有 `tls.key` 一個鍵值對
+
+        > 挑戰成功之後，該憑證會在過期前 30 天自動進行 renew 的動作
+
+27. 部署服務與相關設定 (Deployments、Service、Ingress、ConfigMap、SecretMap)
 
     > ※ 請記得先將映像 (image) 推到指定的 Registry 中，否則部署後 Pod 將無法正常運作
 
@@ -602,9 +785,11 @@
       ...
     ```
 
-25. 設定 registry 的登入帳號密碼
+28. 設定 registry 的登入帳號密碼
 
     > 由於 Secrets 無法跨命名空間 (namespace) 使用，故如有多個命名空間，每個命名空間都需要部署一份 Secrets
+
+    > 雖然 `emberstack/kubernetes-reflector` 可以反射 secret 至不同的 namespace，但後續仍要繫結 secret 與 service account，因此不建議使用反射
 
     1. 執行以下指令以建立帳號密碼的 Secrets
 
@@ -629,7 +814,7 @@
 
             在 `spec.template.spec` 底下新增下面語句
 
-            > 請注意，Secrets 請務必與 Deployment 部屬的 Pod 所屬的命名空間相同，否則會讀不到
+            > 請注意，Secrets 請務必與 Deployment 部署的 Pod 所屬的命名空間相同，否則會讀不到
 
             > 請將 `<YOUR_REGISTRY_CREDENTIALS_SECRETS>` 取代為正確的值
 
@@ -676,3 +861,9 @@
 - [Protect hosts - Calico](https://docs.tigera.io/calico/3.25/network-policy/hosts/protect-hosts)
 - [Calico Network Policy介紹](https://hackmd.io/@yansheng133/BJTyrfK2Y)
 - [Defend against DoS attacks](https://docs.tigera.io/calico/3.25/network-policy/extreme-traffic/defend-dos-attack)
+- [cert-manager](https://cert-manager.io/docs/installation/helm/)
+- [emberstack/kubernetes-reflector](https://github.com/emberstack/kubernetes-reflector)
+- [HTTP Validation](https://cert-manager.io/docs/tutorials/acme/http-validation/)
+- [在kubernetes上使用cert-manager自動更新Let’s Encrypt TLS憑證](https://medium.com/@kenchen_57904/%E5%9C%A8kubernetes%E4%B8%8A%E4%BD%BF%E7%94%A8cert-manager%E8%87%AA%E5%8B%95%E6%9B%B4%E6%96%B0lets-encrypt-tls%E6%86%91%E8%AD%89-834b65d43c96)
+- [Is it possible to specify http01 port for acme-challenge?](https://github.com/cert-manager/cert-manager/issues/2131)
+- [Let's Encrypt 速率限制](https://letsencrypt.org/zh-tw/docs/rate-limits/)
