@@ -695,12 +695,12 @@
             # 正式申請請將上面這行註解掉後打開下一行的註解
             # server: https://acme-v02.api.letsencrypt.org/directory
             email: <YOUR_EMAIL_ADDRESS>
-            # ACME 挑戰成功後儲存憑證的 secret 名稱
+            # ACME 註冊後儲存帳號相關資訊的 secret 名稱
             privateKeySecretRef:
               name: <TLS_SECRET_NAME>
             # 啟用 HTTP-01 挑戰提供者
             solvers:
-              # 空白的 'selector' 表示此 solver 處理所有的域名
+              # selector 留空表示此 solver 處理所有的域名
               - selector: {}
                 http01:
                   ingress:
@@ -721,7 +721,7 @@
             name: <ISSUER_NAME>
             # 如果這個 Issuer 種類是 ClusterIssuer，請把下面這行註解打開
             # kind: ClusterIssuer
-          # 如有頂級域名請宣告在這邊
+          # 如有頂級域名請宣告在這邊，只有次級域名這邊就直接宣告次級域名即可
           commonName: <YOUR_DOMAIN>
           # 子域名才宣告在這邊
           dnsNames:
