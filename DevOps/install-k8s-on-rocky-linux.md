@@ -249,13 +249,33 @@
 22. 部署 nginx ingress controller
 
     1. 使用 Helm 安裝
-        > 這條指令如果已經安裝過 nginx-ingress，則它會進行更新，若未安裝過，則會進行安裝
+        > 利用 Helm 安裝的 Service 中 `externalTrafficPolicy` 預設為 `Cluster`，這會導致入站 IP 全部都是 Node 的 IP，若要看到外部 IP，請將其設為 `Local`
 
-        ```console
-        $ helm upgrade --install ingress-nginx ingress-nginx \
-            --repo https://kubernetes.github.io/ingress-nginx \
-            --namespace ingress-nginx --create-namespace
-        ```
+        > 另外 TCP 與 UDP Service 暴露設定也可以在 Helm 中直接設定
+
+        - 使用 Bitnami 提供的 Repo 安裝
+
+            > 使用 Repository 的方式未來升級版本會比較方便
+
+            > 使用 Bitnami 的 Repo 進行安裝會額外安裝 `default-backend`，用以接受所有不符合 Ingress 規則的入站流量
+
+            ```console
+            $ helm repo add my-repo https://charts.bitnami.com/bitnami
+            $ helm install my-release my-repo/nginx-ingress-controller \
+                --namespace ingress-nginx --create-namespace
+            ```
+
+        - 使用官方提供的指令
+
+            > 這條指令如果已經安裝過 nginx-ingress，則它會進行更新，若未安裝過，則會進行安裝
+
+            > 官方這個指令不確定未來更新是否可以順利
+
+            ```console
+            $ helm upgrade --install ingress-nginx ingress-nginx \
+                --repo https://kubernetes.github.io/ingress-nginx \
+                --namespace ingress-nginx --create-namespace
+            ```
 
     2. 使用 kubectl 安裝
         > ※ 建議每次都從[官方文件](https://kubernetes.github.io/ingress-nginx/deploy/)中複製 yaml 檔網址，以確保 ingress 版本是最新的穩定版本
@@ -678,6 +698,12 @@
 
     2. 建立 Issuer 和 Certificate 宣告，並以 `kubectl apply -f <YAML_NAME>` 套用
 
+        > 測試請使用 staging 伺服器以避免超過申請限制
+
+        > 完成測試後要進行正式申請前，除了要把伺服器網址換掉外，先執行 `kubectl delete` 將先前的 issuer 和 certificate 宣告移除後，**將測試申請的無效憑證從 secret 移除**，再執行一次 `kubectl apply` 後，cert-manager 才會進行正式的憑證申請
+
+        > 頂級網域的擁有者不是自己的子網域 (例: *.freedynamicdns.net 這類 no-ip 服務申請到的域名)，其憑證宣告需逐個網域宣告
+
         ```yaml
         # issuer.yaml
         apiVersion: cert-manager.io/v1
@@ -867,3 +893,4 @@
 - [在kubernetes上使用cert-manager自動更新Let’s Encrypt TLS憑證](https://medium.com/@kenchen_57904/%E5%9C%A8kubernetes%E4%B8%8A%E4%BD%BF%E7%94%A8cert-manager%E8%87%AA%E5%8B%95%E6%9B%B4%E6%96%B0lets-encrypt-tls%E6%86%91%E8%AD%89-834b65d43c96)
 - [Is it possible to specify http01 port for acme-challenge?](https://github.com/cert-manager/cert-manager/issues/2131)
 - [Let's Encrypt 速率限制](https://letsencrypt.org/zh-tw/docs/rate-limits/)
+- [Nginx ingress sends private IP for X-Real-IP to services](https://stackoverflow.com/a/68347429)
