@@ -6,6 +6,8 @@
 
 > ※ 所有的指令前綴為 `$` 表不需要 root 權限， `#` 則需要 root 權限，`>` 表示繼續輸入。
 
+> 文件中以 `<` 和 `>` 包住且裡面的文字為**大寫英文以底線區隔單字者**，表該參數需要自行取代為正確的值。例如: `<NETWORK_IP>` 就需要取代成**正確的網路介面卡 IP**
+
 ## 全自動化懶人安裝法
 
 - [使用 Ansible 在 Rocky Linux 上安裝 k8s](https://computingforgeeks.com/install-kubernetes-cluster-on-rocky-linux-with-kubeadm-crio/)
@@ -18,7 +20,7 @@
 
     > 執行指令前請先確認網路是否已經完成設定，特別是 IP 部分，請盡量不要使用 DHCP 自動派發
 
-    > **&lt;HOSTNAME&gt; 需符合 FQDN 的規範**
+    > **&lt;HOSTNAME&gt; 需符合 RFC 1123 DNS 標籤的規範**
 
     ```console
     # hostnamectl set-hostname <HOSTNAME>
@@ -639,7 +641,10 @@
     ```console
     $ helm repo add emberstack https://emberstack.github.io/helm-charts
     $ helm repo update
-    $ helm upgrade --install reflector emberstack/reflector
+    $ helm upgrade --install \
+        reflector emberstack/reflector \
+        --namespace k8s-reflector \
+        --create-namespace
     ```
 
 26. 部署 cert-manager 進行 TLS 憑證自動更新
@@ -732,9 +737,13 @@
             annotations:
               # 允許反射 (複製)
               reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
-              # 控制要反射的目標 namespace，僅允許逗號分隔的字串或正規表達式
+              # 控制要允許反射的目標 namespace，僅允許逗號分隔的字串或正規表達式
               # 這邊宣告的 namespace 若沒有先建立，則不會被反射
               reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: <NAMESPACES>
+              # 啟用自動反射
+              reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
+              # 控制自動反射的 namespace，需要包含在 reflection-allowed-namespaces 設定中
+              reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: <NAMESPACES>
         ```
 
     3. Calico 新增允許 80/TCP 流量
