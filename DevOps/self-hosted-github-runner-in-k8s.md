@@ -48,6 +48,8 @@
 
     > 請注意，儲存庫的名稱 `<YOUR_REPOSITORY_NAME>` 必須包含帳號與斜線，例如: `gitacc/test-repo`
 
+    > 若這邊有設定 `labels` 名稱，則在 workflow 中的 `run-on` 欄位可以填這個 label 名稱
+
     ```yaml
     apiVersion: actions.summerwind.dev/v1alpha1
     kind: RunnerDeployment
