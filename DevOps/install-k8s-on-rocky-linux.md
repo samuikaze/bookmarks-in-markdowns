@@ -262,8 +262,8 @@
             > 使用 Bitnami 的 Repo 進行安裝會額外安裝 `default-backend`，用以接受所有不符合 Ingress 規則的入站流量
 
             ```console
-            $ helm repo add my-repo https://charts.bitnami.com/bitnami
-            $ helm install my-release my-repo/nginx-ingress-controller \
+            $ helm repo add bitnami https://charts.bitnami.com/bitnami
+            $ helm install ingress-nginx-controller bitnami/nginx-ingress-controller \
                 --namespace ingress-nginx --create-namespace
             ```
 
