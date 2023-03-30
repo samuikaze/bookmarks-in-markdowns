@@ -110,7 +110,7 @@
         labels:
           app: selenium-node-chrome
       spec:
-        replicas: 2
+        replicas: 1
         selector:
           matchLabels:
             app: selenium-node-chrome
@@ -193,8 +193,12 @@
 
 4. Selenium 使用
 
-    在執行 `webdriver.Chrome()` 建構式時，除了帶入 `options` 外，需額外帶 `command_executor='http://selenium-hub.<NAMESPACE>:4444/wd/hub'` 參數給建構式，這樣 Selenium 才會去呼叫這個 URL 中提供的瀏覽器節點取得網頁資料，更多的說明或測試腳本可以在官方儲存庫中取得
+    > 請務必注意，Selenium Hub 如果會重新啟動，表示 Selenium 執行過程中有程式掛掉了，請把問題抓出來，否則每拋出一次例外，Selenium Hub 就會重新啟動一次
+
+    在建構 driver 時，除了要使用 `webdriver.Remote()` 進行建構外，帶入 `options` 後，需額外帶 `command_executor='http://selenium-hub.<NAMESPACE>:4444/wd/hub'` 參數給建構式，這樣 Selenium 才會去呼叫這個 URL 中提供的瀏覽器節點取得網頁資料，更多的說明或測試腳本可以在官方儲存庫中取得
 
 ## 參考資料
 
 - [Selenium on Kubernetes](https://github.com/kubernetes/examples/tree/master/staging/selenium)
+- [Concurrent Web Scraping with Selenium Grid and Docker Swarm](https://testdriven.io/blog/concurrent-web-scraping-with-selenium-grid-and-docker-swarm/)
+- [Building a Concurrent Web Scraper with Python and Selenium](https://testdriven.io/blog/building-a-concurrent-web-scraper-with-python-and-selenium/)
