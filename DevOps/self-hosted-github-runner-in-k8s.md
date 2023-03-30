@@ -213,7 +213,7 @@
 
 6. 測試 Runner
 
-    > 尚待測試
+    將 Runner 都部上 Kubernetes 後，去針對要測試的專案加上 GitHub Workflow yaml 檔，並宣告執行的機器是自架的 runner，觀察 Kubernetes 中的 runner 是否有自起一個 Pod，並於執行完畢後自動重啟新的 Pod。
 
 ## 本文主要參考文章
 
