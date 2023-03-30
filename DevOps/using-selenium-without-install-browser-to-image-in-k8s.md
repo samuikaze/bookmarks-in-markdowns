@@ -11,6 +11,8 @@
 
     > 註: Service 是方便使用 coredns 呼叫這個服務，如果想要暴露到網際網路上，你還需要再新增 Ingress 的宣告
 
+    > 註: probe 的設定值可以參考[這篇](https://groups.google.com/g/selenium-users/c/vL7hjGyYRU4)的討論，解決 Selenium Hub 會一直被重啟的問題
+
     ```yaml
     # If you just want to deploy to default namespace, comment out namespace block.
     # selenium-hub-namespace.yaml
@@ -55,13 +57,15 @@
                 path: /wd/hub/status
                 port: 4444
               initialDelaySeconds: 30
-              timeoutSeconds: 5
+              timeoutSeconds: 30
+              failureThreshold: 5
             readinessProbe:
               httpGet:
                 path: /wd/hub/status
                 port: 4444
               initialDelaySeconds: 30
-              timeoutSeconds: 5
+              timeoutSeconds: 30
+              failureThreshold: 5
 
     ---
     # selenium-hub-service.yaml
@@ -202,3 +206,4 @@
 - [Selenium on Kubernetes](https://github.com/kubernetes/examples/tree/master/staging/selenium)
 - [Concurrent Web Scraping with Selenium Grid and Docker Swarm](https://testdriven.io/blog/concurrent-web-scraping-with-selenium-grid-and-docker-swarm/)
 - [Building a Concurrent Web Scraper with Python and Selenium](https://testdriven.io/blog/building-a-concurrent-web-scraper-with-python-and-selenium/)
+- [Selenium hub shutdowns when it receives SIGTERM signal from supervisord](https://groups.google.com/g/selenium-users/c/vL7hjGyYRU4)
