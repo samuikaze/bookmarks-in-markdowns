@@ -206,7 +206,7 @@
             - `Payload URL` 填入剛剛設定在 Kubernetes 中的域名 + 路徑
             - `Content type` 選擇 `application/json`
             - `Which events would you like to trigger this webhook?` 選擇 `Let me select individual events.`
-            - 將所有勾選取消後，僅選擇 `Workflow runs`
+            - 將所有勾選取消後，僅選擇 `Workflow jobs`
             - 點選 `Add webhook` 確認新增
             - GitHub 進行伺服器連線驗證，沒問題會顯示打勾
             - 切換到左側選單的 `Actions` > `Runners` 確認有沒有剛剛設定的 runner 出現
