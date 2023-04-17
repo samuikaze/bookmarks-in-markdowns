@@ -22,14 +22,14 @@
     - 點選 `Generate token` 建立權杖
     - 下一頁會顯示產生的權杖值，請將之複製下來，後續會使用到
 3. 安裝 Action Runner Controller
-    > 不論使用什麼方式安裝，請務必將 `REPLACE_YOUR_TOKEN_HERE` 取代為剛剛申請的 PAT
+    > 不論使用什麼方式安裝，請務必將 `<REPLACE_YOUR_TOKEN_HERE>` 取代為剛剛申請的 PAT
     - Helm 安裝
 
         ```console
         $ helm repo add actions-runner-controller https://actions-runner-controller.github.io/actions-runner-controller
         $ helm upgrade --install --namespace actions-runner-system --create-namespace \
             --set=authSecret.create=true \
-            --set=authSecret.github_token="REPLACE_YOUR_TOKEN_HERE" \
+            --set=authSecret.github_token=<REPLACE_YOUR_TOKEN_HERE> \
             --wait actions-runner-controller actions-runner-controller/actions-runner-controller
         ```
 
@@ -215,6 +215,28 @@
 
     將 Runner 都部上 Kubernetes 後，去針對要測試的專案加上 GitHub Workflow yaml 檔，並宣告執行的機器是自架的 runner，觀察 Kubernetes 中的 runner 是否有自起一個 Pod，並於執行完畢後自動重啟新的 Pod。
 
+## 修正 Kubernetes 節點重新啟動後 action-runner-controller 起不來的問題
+
+此範例遇到的問題是找不到 `action-runner-controller` 這個 secret，這個 secret 其實是 Action Runner Controller 的驗證 secret，更新 Helm chart 就可以解決:
+
+```console
+$ helm upgrade --install \
+    --namespace actions-runner-system \
+    --create-namespace \
+    --set=authSecret.create=true \
+    --set=authSecret.github_token=<REPLACE_YOUR_TOKEN_HERE> \
+    --wait actions-runner-controller actions-runner-controller/ actions-runner-controller
+```
+
+此時若先前還有部署 Webhook 伺服器動態擴縮容，則必須重新再部署一次
+
+```console
+$ helm upgrade --install --namespace actions-runner-system --create-namespace \
+    --wait actions-runner-controller actions-runner-controller/actions-runner-controller \
+    --set "githubWebhookServer.enabled=true"
+```
+
+完成
 ## 本文主要參考文章
 
 - [Actions Runner Controller](https://github.com/actions/actions-runner-controller)
@@ -233,3 +255,4 @@
 - [PHP Swagger OpenAPI Generic Type](https://stackoverflow.com/questions/71901795/php-swagger-openapi-generic-type)
 - [How to set up file permissions for Laravel?](https://stackoverflow.com/a/37266353)
 - [Convert Laravel Route::any into Lumen Route](https://stackoverflow.com/questions/57863502/convert-laravel-routeany-into-lumen-route)
+- [For anyone that has encountered secret not found issue](https://github.com/actions/actions-runner-controller/issues/520#issuecomment-972853423)
