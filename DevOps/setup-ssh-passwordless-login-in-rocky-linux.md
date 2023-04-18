@@ -13,11 +13,11 @@
     ```
 
 2. ssh-keygen 詢問鑰匙儲存位置，按 ENTER 預設即可
-3. ssh-keygen 詢問鑰匙密碼，如要建立密碼給公鑰雨私鑰，可以在這邊設定，否則按兩次 ENTER 跳過即可
+3. ssh-keygen 詢問鑰匙密碼，如要建立密碼給公鑰與私鑰，可以在這邊設定，否則按兩次 ENTER 跳過即可
 4. 將產生的公鑰放到遠端伺服器上
 
     ```console
-    ssh-copy-id <Username>@<Remote server IP or domain>
+    ssh-copy-id <USERNAME>@<REMOTE_SERVER_IP_OR_DOMAIN>
     ```
 
     > ※ 若需要將公鑰放到如 GitHub 上，將 `id_rsa.pub` 檔案的內容全部貼到該服務供應商的設定內即可
