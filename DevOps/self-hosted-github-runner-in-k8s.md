@@ -237,7 +237,10 @@ $ helm upgrade --install --namespace actions-runner-system --create-namespace \
 ```
 
 完成
-## 本文主要參考文章
+
+## 參考資料
+
+### 本文主要參考文章
 
 - [Actions Runner Controller](https://github.com/actions/actions-runner-controller)
 
