@@ -112,6 +112,8 @@
 
 > 產生出來的 kubeconfig 檔案名稱可以隨意修改
 
+> 如 TLS 憑證為自簽憑證，請將 `insecure-skip-tls-verify: true` 的設定打開，並移除 `certificate-authority-data: ${ca}` 這一行
+
 ```shell
 #!/bin/bash
 
@@ -134,7 +136,6 @@ clusters:
   - name: ${clusterName}
     cluster:
       certificate-authority-data: ${ca}
-      # 如 TLS 憑證為自簽憑證，請將以下的設定打開
       # insecure-skip-tls-verify: true
       server: ${server}
 contexts:
