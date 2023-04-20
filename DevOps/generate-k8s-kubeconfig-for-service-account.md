@@ -134,6 +134,8 @@ clusters:
   - name: ${clusterName}
     cluster:
       certificate-authority-data: ${ca}
+      # 如 TLS 憑證為自簽憑證，請將以下的設定打開
+      # insecure-skip-tls-verify: true
       server: ${server}
 contexts:
   - name: ${serviceAccount}@${clusterName}
