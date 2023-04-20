@@ -159,3 +159,6 @@ current-context: ${serviceAccount}@${clusterName}
 - [使用 RBAC 鑑權](https://kubernetes.io/zh-cn/docs/reference/access-authn-authz/rbac/)
 - [Kubernetes RBAC Port Forward](https://medium.com/@ManagedKube/kubernetes-rbac-port-forward-4c7eb3951e28)
 - [List of Kubernetes RBAC rule verbs](https://stackoverflow.com/a/65245307)
+- [How can I allow port-forwarding for a specific deployment in Kubernetes?](https://stackoverflow.com/questions/56670876/how-can-i-allow-port-forwarding-for-a-specific-deployment-in-kubernetes)
+- [K8S port forward to Service in secure cluster](https://stackoverflow.com/questions/64883866/k8s-port-forward-to-service-in-secure-cluster)
+- [ Connection problem to self-signed tls certificates #52](https://github.com/lensapp/lens/issues/52#issuecomment-543665159)
