@@ -219,21 +219,25 @@
 
 此範例遇到的問題是找不到 `action-runner-controller` 這個 secret，這個 secret 其實是 Action Runner Controller 的驗證 secret，更新 Helm chart 就可以解決:
 
+> 若執行指令後 Pod 一直沒有重新啟動，請將舊的 Pod 直接刪除即可
+
 ```console
 $ helm upgrade --install \
     --namespace actions-runner-system \
     --create-namespace \
     --set=authSecret.create=true \
     --set=authSecret.github_token=<REPLACE_YOUR_TOKEN_HERE> \
-    --wait actions-runner-controller actions-runner-controller/ actions-runner-controller
+    --wait actions-runner-controller actions-runner-controller/actions-runner-controller
 ```
 
 此時若先前還有部署 Webhook 伺服器動態擴縮容，則必須重新再部署一次
 
+> 你也可以將 `--set "githubWebhookServer.enabled=true"` 放到上面的指令中一併執行
+
 ```console
 $ helm upgrade --install --namespace actions-runner-system --create-namespace \
-    --wait actions-runner-controller actions-runner-controller/actions-runner-controller \
-    --set "githubWebhookServer.enabled=true"
+    --set "githubWebhookServer.enabled=true" \
+    --wait actions-runner-controller actions-runner-controller/actions-runner-controller
 ```
 
 完成
