@@ -271,8 +271,6 @@
 
             > 這條指令如果已經安裝過 nginx-ingress，則它會進行更新，若未安裝過，則會進行安裝
 
-            > 官方這個指令不確定未來更新是否可以順利
-
             ```console
             $ helm upgrade --install ingress-nginx ingress-nginx \
                 --repo https://kubernetes.github.io/ingress-nginx \
