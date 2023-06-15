@@ -179,7 +179,9 @@
 
     > 使用雲服務可以跳過此步驟，雲服務供應商會有自己的 CNI 介面
 
-    > 建議每次安裝都到官方網站[複製最新版本的指令](https://docs.tigera.io/calico/3.25/operations/calicoctl/install#install-calicoctl-as-a-binary-on-a-single-host)
+    > 網址中的 `latest` 為版本號碼，可以到[這邊](https://github.com/projectcalico/calico/releases)檢視目前的版號為何
+    
+    > 請注意，版號若與 Calico 版本不同，下指令會變得非常麻煩，甚至有部署設定失敗的可能性
 
     ```console
     # cd /usr/local/bin
@@ -221,6 +223,10 @@
     > 使用雲服務可以跳過此步驟，雲服務供應商會有自己的 CNI 介面
 
     > 這邊都是使用「低於 50 台節點的設定檔」，如需大於 50 台節點的設定檔，請至[官方網站下載](https://docs.tigera.io/calico/3.25/getting-started/kubernetes/self-managed-onprem/onpremises#install-calico)
+
+    > `calicoctl` 與 Calico` 的版本請盡量一致，否則下指令時會變得非常麻煩，甚至有部署失敗的可能性
+
+    > `v3.25.0` 這是安裝的版號，可以到[這邊](https://github.com/projectcalico/calico/releases)檢視可以使用的版號
 
     - 下載 kubectl 的 yaml 檔案
 
