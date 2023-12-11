@@ -180,7 +180,7 @@
     > 使用雲服務可以跳過此步驟，雲服務供應商會有自己的 CNI 介面
 
     > 網址中的 `latest` 為版本號碼，可以到[這邊](https://github.com/projectcalico/calico/releases)檢視目前的版號為何
-    
+
     > 請注意，版號若與 Calico 版本不同，下指令會變得非常麻煩，甚至有部署設定失敗的可能性
 
     ```console
@@ -872,6 +872,29 @@
 
     3. 部署應用程式，完成
 
+## 更新軟體包倉庫位址
+
+Kubernete 官方於 2023/08/31 公告由 Google 所維護的倉庫將於 2023/09/13 被凍結 ([參考此文章](https://kubernetes.io/zh-cn/blog/2023/08/31/legacy-package-repository-deprecation/)) 因此需要針對轉體包倉庫的位址進行更新，其更新步驟如下:
+
+- 先透過 `kubectl version --short` 找到目前安裝的 Kubernetes 版本
+- 在 `/etc/yum.repos/` 資料夾下找到 `kubernetes.repo` 檔
+- 透過文字編輯軟體打開該 repo 檔案 (由於是系統檔案，需使用 sudo 或 root 權限)
+- 將其內容調整為如下
+
+> 請將 `<KUBERNETS_VERSION>` 取代為您的 Kubernetes 版本號碼，例如: `1.26`
+
+```repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://pkgs.k8s.io/core:/stable:/v<KUBERNETS_VERSION>/rpm/
+enabled=1
+gpgcheck=1
+gpgkey=https://pkgs.k8s.io/core:/stable:/v<KUBERNETS_VERSION>/rpm/repodata/repomd.xml.key
+exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+```
+
+- 完成
+
 ## 其它資料
 
 - [刪除不在預設命名空間的服務](https://stackoverflow.com/a/67517905)
@@ -907,3 +930,5 @@
 - [Is it possible to specify http01 port for acme-challenge?](https://github.com/cert-manager/cert-manager/issues/2131)
 - [Let's Encrypt 速率限制](https://letsencrypt.org/zh-tw/docs/rate-limits/)
 - [Nginx ingress sends private IP for X-Real-IP to services](https://stackoverflow.com/a/68347429)
+- [Kubernetes 舊版軟體包倉庫將於 2023 年 9 月 13 日被凍結](https://kubernetes.io/zh-cn/blog/2023/08/31/legacy-package-repository-deprecation/)
+- [pkgs.k8s.io：介紹 Kubernetes 社區自有的包倉庫](https://kubernetes.io/zh-cn/blog/2023/08/15/pkgs-k8s-io-introduction/)
