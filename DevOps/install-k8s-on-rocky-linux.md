@@ -117,14 +117,16 @@
 
 10. 新增 Repo list
 
+    > 請將 `<KUBERNETS_VERSION>` 取代為您的 Kubernetes 版本號碼，例如: `1.26`
+
     ```console
     # cat > /etc/yum.repos.d/kubernetes.repo << EOF
     > [kubernetes]
     > name=Kubernetes
-    > baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+    > baseurl=https://pkgs.k8s.io/core:/stable:/v<KUBERNETS_VERSION>/rpm/
     > enabled=1
     > gpgcheck=1
-    > gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+    > gpgkey=https://pkgs.k8s.io/core:/stable:/v<KUBERNETS_VERSION>/rpm/repodata/repomd.xml.key
     > exclude=kubelet kubeadm kubectl
     > EOF
     ```
