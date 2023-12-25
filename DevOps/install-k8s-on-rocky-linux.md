@@ -897,6 +897,25 @@ exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
 
 - 完成
 
+## 更新自簽憑證
+
+若是自行安裝的 K8s ，其 apiserver 等服務所使用的憑證皆為自簽憑證，效期為一年，因此每隔一年就需要進行自簽憑證的重新簽發，可以透過以下的方式進行：
+
+1. 每至少一年更新一次 Control Plane，更新時就會自動重新簽發新的自簽憑證。
+2. 手動重新簽發憑證
+    - 透過 SSH 連線到 K8s 的節點
+    - 先透過指令 `kubeadm certs check-expiration` 檢查目前的自簽憑證狀態
+    - 若已過期，可以透過指令 `kubeadm certs renew all` 重新簽發所有自簽憑證
+    - 再透過指令 `systemctl restart kubelet` 重新啟動 kubelet 服務，始之套用這些憑證
+    - 執行以下兩個指令更新 `~/.kube/config` 中的憑證
+
+    ```console
+    $ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+    $ sudo chown $(id -u):$(id -g) $HOME/.kube/config
+    ```
+
+    - 完成
+
 ## 其它資料
 
 - [刪除不在預設命名空間的服務](https://stackoverflow.com/a/67517905)
@@ -934,3 +953,5 @@ exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
 - [Nginx ingress sends private IP for X-Real-IP to services](https://stackoverflow.com/a/68347429)
 - [Kubernetes 舊版軟體包倉庫將於 2023 年 9 月 13 日被凍結](https://kubernetes.io/zh-cn/blog/2023/08/31/legacy-package-repository-deprecation/)
 - [pkgs.k8s.io：介紹 Kubernetes 社區自有的包倉庫](https://kubernetes.io/zh-cn/blog/2023/08/15/pkgs-k8s-io-introduction/)
+- [使用 kubeadm 進行憑證管理](https://kubernetes.io/zh-cn/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/)
+- [Restart kube-apiserver when provisioned with kubeadm](https://stackoverflow.com/a/42722258)
