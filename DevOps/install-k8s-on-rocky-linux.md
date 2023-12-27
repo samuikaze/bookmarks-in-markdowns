@@ -897,11 +897,99 @@ exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
 
 - 完成
 
-## 更新自簽憑證
+## 更新 kubeadm 叢集/自簽憑證
 
 若是自行安裝的 K8s ，其 apiserver 等服務所使用的憑證皆為自簽憑證，效期為一年，因此每隔一年就需要進行自簽憑證的重新簽發，可以透過以下的方式進行：
 
-1. 每至少一年更新一次 Control Plane，更新時就會自動重新簽發新的自簽憑證。
+1. 每至少一年更新一次 Control Plane，更新時就會自動重新簽發新的自簽憑證 (推薦)。
+    - 先透過以下指令檢視目前 K8s 版本為何
+
+    ```console
+    $ kubectl version --short
+    ```
+
+    - 透過以下指令查詢目前最新版本的版本號碼
+
+    ```console
+    # dnf list --showduplicates kubeadm --disableexcludes=kubernetes
+    ```
+
+    - 先透過以下指令將結點騰空
+
+        > 將 `<NODE_TO_DRAIN>` 取代為你要騰空的控制面節點名稱
+
+    ```console
+    # kubectl drain <NODE_TO_DRAIN> --ignore-daemonsets
+    ```
+
+    - 執行下面指令更新 kubeadm 版本
+        > `<VERSION>` 請取代為你要更新的版本號碼，例如: `1.26.12`
+
+    ```console
+    # dnf install -y kubeadm-'<VERSION>-*' --disableexcludes=kubernetes
+    ```
+
+    - 透過下面指令驗證安裝的 kubeadm 版本
+
+    ```console
+    $ kubeadm version
+    ```
+
+    - 透過下面指令驗證升級計畫
+
+    ```console
+    # kubeadm upgrade plan
+    ```
+
+    - 執行下面指令套用升級
+
+        > `<VERSION>` 請取代為你要更新的版本號碼，例如: `1.26.12`
+
+    ```console
+    # kubeadm upgrade apply v<VERSION>
+    ```
+
+    - 待指令成功執行後，會看到類似下面的輸出，表示升級成功
+
+    ```console
+    [upgrade/successful] SUCCESS! Your cluster was upgraded to "v1.29.x". Enjoy!
+
+    [upgrade/kubelet] Now that your control plane is upgraded, please proceed with upgrading your kubelets if you haven't already done so.
+    ```
+
+    - 針對有一個以上的控制平面節點，第一個以後的節點請使用指令 `sudo kubeadm upgrade node` 進行升級
+    - 透過下面指令升級 kubelet 與 kubectl
+
+        > `<VERSION>` 請取代為你要更新的版本號碼，例如: `1.26.12`
+
+        > 這邊的版本號碼請盡量與 kubeadm 的版本號碼一致
+
+    ```console
+    # dnf install -y kubelet-'<VERSION>-*' kubectl-'<VERSION>-*' --disableexcludes=kubernetes
+    ```
+
+    - 透過以下指令重啟 `kubelet`
+
+    ```console
+    $ sudo systemctl daemon-reload
+    $ sudo systemctl restart kubelet
+    ```
+
+    - 執行以下兩個指令更新 `~/.kube/config` 中的憑證
+
+    ```console
+    $ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+    $ sudo chown $(id -u):$(id -g) $HOME/.kube/config
+    ```
+
+    - 解除節點的保護
+
+        > 將 `<NODE_TO_DRAIN>` 取代為你的節點名稱
+
+    ```console
+    $ kubectl uncordon <NODE_TO_DRAIN>
+    ```
+
 2. 手動重新簽發憑證
     - 透過 SSH 連線到 K8s 的節點
     - 先透過指令 `kubeadm certs check-expiration` 檢查目前的自簽憑證狀態
@@ -955,3 +1043,4 @@ exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
 - [pkgs.k8s.io：介紹 Kubernetes 社區自有的包倉庫](https://kubernetes.io/zh-cn/blog/2023/08/15/pkgs-k8s-io-introduction/)
 - [使用 kubeadm 進行憑證管理](https://kubernetes.io/zh-cn/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/)
 - [Restart kube-apiserver when provisioned with kubeadm](https://stackoverflow.com/a/42722258)
+- [升級 kubeadm 叢集](https://kubernetes.io/zh-cn/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/)
