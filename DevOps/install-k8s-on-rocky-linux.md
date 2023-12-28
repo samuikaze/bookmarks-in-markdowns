@@ -8,11 +8,30 @@
 
 > 文件中以 `<` 和 `>` 包住且裡面的文字為**大寫英文以底線區隔單字者**，表該參數需要自行取代為正確的值。例如: `<NETWORK_IP>` 就需要取代成**正確的網路介面卡 IP**
 
+## 目錄
+
+- [全自動化懶人安裝法](#全自動化懶人安裝法)
+- [手動安裝](#手動安裝)
+  - [OS 層設定](#os-層設定)
+  - [安裝 Kubernetes 與其相依套件](#安裝-kubernetes-與其相依套件)
+  - [安裝 CNI](#安裝-cni)
+  - [安裝 Helm](#安裝-helm)
+  - [安裝 Nginx ingress controller 與 metallb](#安裝-nginx-ingress-controller-與-metallb)
+  - [安裝 kubernetes-reflector 與 cert-manager](#安裝-kubernetes-reflector-與-cert-manager)
+  - [其它設定](#其它設定)
+- [更新軟體包倉庫位址](#更新軟體包倉庫位址)
+- [更新 kubeadm 叢集/自簽憑證](#更新-kubeadm-叢集自簽憑證)
+  - [透過更新 Control Plane 重新簽發自簽憑證 (推薦)](#透過更新-control-plane-重新簽發自簽憑證-推薦)
+  - [手動重新簽發憑證](#手動重新簽發憑證)
+- [參考資料](#參考資料)
+
 ## 全自動化懶人安裝法
 
 - [使用 Ansible 在 Rocky Linux 上安裝 k8s](https://computingforgeeks.com/install-kubernetes-cluster-on-rocky-linux-with-kubeadm-crio/)
 
 ## 手動安裝
+
+### OS 層設定
 
 1. 設定機器域名與名稱
 
@@ -96,7 +115,11 @@
     # free -m
     ```
 
-9. 安裝 crio
+- [返回目錄](#目錄)
+
+### 安裝 Kubernetes 與其相依套件
+
+1. 安裝 crio
     - 第一種方式 (推薦)
 
         > 若 curl 的目標連結失效，請逕至 [cri-o 的倉庫](https://github.com/cri-o/cri-o/)尋找新的連結
@@ -117,7 +140,7 @@
     # systemctl enable --now crio
     ```
 
-10. 新增 Repo list
+2. 新增 Repo list
 
     > 請將 `<KUBERNETS_VERSION>` 取代為您的 Kubernetes 版本號碼，例如: `1.26`
 
@@ -133,27 +156,27 @@
     > EOF
     ```
 
-11. 安裝並啟用 kubelet、kubectl 和 kubeadm
+3. 安裝並啟用 kubelet、kubectl 和 kubeadm
 
     ```console
     # dnf install -y {kubelet,kubeadm,kubectl} --disableexcludes=kubernetes
     # systemctl enable --now kubelet.service
     ```
 
-12. 安裝 kubectl bash 指令自動完成
+4. 安裝 kubectl bash 指令自動完成
 
     ```console
     # source <(kubectl completion bash)
     # kubectl completion bash > /etc/bash_completion.d/kubectl
     ```
 
-13. 拉取設定檔
+5. 拉取設定檔
 
     ```console
     # kubeadm config images pull --cri-socket unix:///var/run/crio/crio.sock
     ```
 
-14. 初始化 kubeadm
+6. 初始化 kubeadm
 
     > ※ `<POD_NETWORK_CIDR>` 請更改為預計讓 pod 使用的網段，此設定會影響後續安裝 Calico 的相關設定
 
@@ -163,7 +186,7 @@
         --cri-socket unix:///var/run/crio/crio.sock
     ```
 
-15. 讓 kubectl 指令可以不用 sudo 執行
+7. 讓 kubectl 指令可以不用 sudo 執行
 
     ```console
     $ mkdir -p $HOME/.kube
@@ -171,7 +194,7 @@
     # chown $(id -u):$(id -g) $HOME/.kube/config
     ```
 
-16. 讓 Control Plane 機器也可以部署 Pod
+8. 讓 Control Plane 機器也可以部署 Pod
 
     > ※ 若此指令無效，請執行 `kubectl describe nodes` 去看目前 Control Plane 那台 node 目前的汙點名稱為何，將 `node-role.kubernetes.io/control-plane:NoSchedule` 變更為正確的汙點名稱就可以了
 
@@ -179,7 +202,11 @@
     kubectl taint nodes --all node-role.kubernetes.io/control-plane:NoSchedule-
     ```
 
-17. 安裝 calicoctl
+- [返回目錄](#目錄)
+
+### 安裝 CNI
+
+1. 安裝 calicoctl
 
     > 使用雲服務可以跳過此步驟，雲服務供應商會有自己的 CNI 介面
 
@@ -193,7 +220,7 @@
     # chmod +x ./calicoctl
     ```
 
-18. 設定 calicoctl 對於 etcd 的連線 (這邊使用 Kubernetes 自帶的 etcd 資料庫)
+2. 設定 calicoctl 對於 etcd 的連線 (這邊使用 Kubernetes 自帶的 etcd 資料庫)
 
     > 使用雲服務可以跳過此步驟，雲服務供應商會有自己的 CNI 介面
 
@@ -209,7 +236,7 @@
     > EOF
     ```
 
-19. 避免 NetworkManager 防止 Calico 修改路由表規則
+3. 避免 NetworkManager 防止 Calico 修改路由表規則
 
     > 使用雲服務可以跳過此步驟，雲服務供應商會有自己的 CNI 介面
 
@@ -222,7 +249,7 @@
     > EOF
     ```
 
-20. 安裝 Calico 當作 CNI
+4. 安裝 Calico 當作 CNI
 
     > 使用雲服務可以跳過此步驟，雲服務供應商會有自己的 CNI 介面
 
@@ -246,134 +273,7 @@
 
     > 安裝完成後部分 Pod 的 IP 可能不是正確的，請利用 Deployment 等方式重啟 Pod 即可。
 
-21. 安裝 Helm
-
-    > 此步驟非必要步驟，如果只想使用 kubectl 工具進行 Kubernetes 相關管理，可以跳過此步驟
-
-    > Helm 在更新 nginx-ingress 等功能時非常實用，比起使用 kubectl 去更新還出一堆錯誤，不如使用 Helm 請它幫你管理
-
-    > 下面這行也可以到[官方文檔中複製](https://helm.sh/docs/intro/install/#from-script)
-
-    ```console
-    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-    ```
-
-22. 部署 nginx ingress controller
-
-    1. 使用 Helm 安裝
-        > 利用 Helm 安裝的 Service 中 `externalTrafficPolicy` 預設為 `Cluster`，這會導致入站 IP 全部都是 Node 的 IP，若要看到外部 IP，請將其設為 `Local`
-
-        > 另外 TCP 與 UDP Service 暴露設定也可以在 Helm 中直接設定
-
-        - 使用 Bitnami 提供的 Repo 安裝
-
-            > 使用 Repository 的方式未來升級版本會比較方便
-
-            > 使用 Bitnami 的 Repo 進行安裝會額外安裝 `default-backend`，用以接受所有不符合 Ingress 規則的入站流量
-
-            ```console
-            $ helm repo add bitnami https://charts.bitnami.com/bitnami
-            $ helm install ingress-nginx-controller bitnami/nginx-ingress-controller \
-                --namespace ingress-nginx --create-namespace
-            ```
-
-        - 使用官方提供的指令
-
-            > 這條指令如果已經安裝過 nginx-ingress，則它會進行更新，若未安裝過，則會進行安裝
-
-            ```console
-            $ helm upgrade --install ingress-nginx ingress-nginx \
-                --repo https://kubernetes.github.io/ingress-nginx \
-                --namespace ingress-nginx --create-namespace
-            ```
-
-    2. 使用 kubectl 安裝
-        > ※ 建議每次都從[官方文件](https://kubernetes.github.io/ingress-nginx/deploy/)中複製 yaml 檔網址，以確保 ingress 版本是最新的穩定版本
-
-        > kubectl 安裝方式在更新版本時非常麻煩，且不穩定，推薦使用 Helm 安裝
-
-        ```console
-        kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/cloud/deploy.yaml
-        ```
-
-23. LoadBalancer 設定外部 IP
-
-    > 使用雲服務 (例: AWS 等)可以跳過此項設定，K8s 會自動綁訂雲服務供應商的 Load Balancer IP
-
-    - 若是使用裸機 (Bare-Metal) 安裝，有以下兩種方式可以設定對外 IP
-        1. 使用 [MetalLB](https://metallb.universe.tf/)
-            - 調整 kube-proxy 設定
-
-                ```console
-                $ kubectl get configmap kube-proxy -n kube-system -o yaml | \
-                    sed -e "s/strictARP: false/strictARP: true/" | \
-                    kubectl apply -f - -n kube-system
-                ```
-
-            - 安裝
-                1. 使用 Helm 安裝
-                    > 使用 Helm 安裝日後更新時會比較快速且穩定
-
-                    ```console
-                    $ helm repo add metallb https://metallb.github.io/metallb
-                    $ helm install metallb metallb/metallb \
-                        --namespace metallb-system --create-namespace
-                    ```
-
-                2. 使用 kubectl 安裝
-                    > kubectl 安裝方式在更新版本時非常麻煩，且不穩定，推薦使用 Helm 安裝
-
-                    > 使用下面指令或[到官方網站上複製指令](https://metallb.universe.tf/installation/#installation-by-manifest)安裝 MetalLB
-
-                    ```console
-                    $ kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.9/config/manifests/metallb-native.yaml
-                    ```
-
-            - 新增一份 yaml 檔，並以 kubectl 套用此設定，其中 yaml 檔需包含以下內容:
-
-                ```yaml
-                # external-ip-pool.yaml
-                apiVersion: metallb.io/v1beta1
-                kind: IPAddressPool
-                metadata:
-                  name: <IP_POOL_NAME>
-                  namespace: metallb-system
-                spec:
-                  addresses:
-                  - <YOUR_IP_POOL_1>
-                  - <YOUR_IP_POOL_2>
-                  - ...
-
-                ---
-                # l2-advertisement.yaml
-                apiVersion: metallb.io/v1beta1
-                kind: L2Advertisement
-                metadata:
-                  name: l2-advertisement
-                  namespace: metallb-system
-                spec:
-                  ipAddressPools:
-                  - <IP_POOL_NAME>
-                ```
-
-        2. 針對 Services 中 LoadBalancer 的 nginx 服務 spec 新增下列設定
-
-            > 除非有必要，Nginx 官方不推薦使用此方式設定外部 IP
-
-            > 建議每台 Kubernetes 的 node 都設定一組固定的 IP，避免不必要的麻煩
-
-            ```console
-            externalIPs:
-            - <機器對外網卡上設定的固定 IP>
-            ```
-
-            或是使用指令直接套用
-
-            ```console
-            $ kubectl patch svc ingress-nginx-controller -n ingress-nginx -p '{"spec": {"externalIPs": ["<機器對外網卡上設定的固定 IP>"]}}'
-            ```
-
-24. 設定 Calico 的網路策略
+5. 設定 Calico 的網路策略
 
     > 所有與 calico 相關的網路策略皆須使用 `calicoctl apply -f <FULL_PATH_TO_FILE>` 套用才會生效
 
@@ -659,7 +559,146 @@
                     selector: dos-deny-list == 'true'
             ```
 
-25. 部署 emberstack/kubernetes-reflector
+- [返回目錄](#目錄)
+
+### 安裝 Helm
+
+透過以下指令進行安裝
+
+> 此步驟非必要步驟，如果只想使用 kubectl 工具進行 Kubernetes 相關管理，可以跳過此步驟
+
+> Helm 在更新 nginx-ingress 等功能時非常實用，比起使用 kubectl 去更新還出一堆錯誤，不如使用 Helm 請它幫你管理
+
+> 下面這行也可以到[官方文檔中複製](https://helm.sh/docs/intro/install/#from-script)
+
+```console
+$ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+```
+
+- [返回目錄](#目錄)
+
+### 安裝 Nginx ingress controller 與 metallb
+
+1. 部署 nginx ingress controller
+
+    - 使用 Helm 安裝
+        > 利用 Helm 安裝的 Service 中 `externalTrafficPolicy` 預設為 `Cluster`，這會導致入站 IP 全部都是 Node 的 IP，若要看到外部 IP，請將其設為 `Local`
+
+        > 另外 TCP 與 UDP Service 暴露設定也可以在 Helm 中直接設定
+
+        - 使用 Bitnami 提供的 Repo 安裝
+
+            > 使用 Repository 的方式未來升級版本會比較方便
+
+            > 使用 Bitnami 的 Repo 進行安裝會額外安裝 `default-backend`，用以接受所有不符合 Ingress 規則的入站流量
+
+            ```console
+            $ helm repo add bitnami https://charts.bitnami.com/bitnami
+            $ helm install ingress-nginx-controller bitnami/nginx-ingress-controller \
+                --namespace ingress-nginx --create-namespace
+            ```
+
+        - 使用官方提供的指令
+
+            > 這條指令如果已經安裝過 nginx-ingress，則它會進行更新，若未安裝過，則會進行安裝
+
+            ```console
+            $ helm upgrade --install ingress-nginx ingress-nginx \
+                --repo https://kubernetes.github.io/ingress-nginx \
+                --namespace ingress-nginx --create-namespace
+            ```
+
+    - 使用 kubectl 安裝
+        > ※ 建議每次都從[官方文件](https://kubernetes.github.io/ingress-nginx/deploy/)中複製 yaml 檔網址，以確保 ingress 版本是最新的穩定版本
+
+        > kubectl 安裝方式在更新版本時非常麻煩，且不穩定，推薦使用 Helm 安裝
+
+        ```console
+        kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/cloud/deploy.yaml
+        ```
+
+2. LoadBalancer 設定外部 IP
+
+    > 使用雲服務 (例: AWS 等)可以跳過此項設定，K8s 會自動綁訂雲服務供應商的 Load Balancer IP
+
+    - 若是使用裸機 (Bare-Metal) 安裝，有以下兩種方式可以設定對外 IP
+        1. 使用 [MetalLB](https://metallb.universe.tf/)
+            - 調整 kube-proxy 設定
+
+                ```console
+                $ kubectl get configmap kube-proxy -n kube-system -o yaml | \
+                    sed -e "s/strictARP: false/strictARP: true/" | \
+                    kubectl apply -f - -n kube-system
+                ```
+
+            - 安裝
+                1. 使用 Helm 安裝
+                    > 使用 Helm 安裝日後更新時會比較快速且穩定
+
+                    ```console
+                    $ helm repo add metallb https://metallb.github.io/metallb
+                    $ helm install metallb metallb/metallb \
+                        --namespace metallb-system --create-namespace
+                    ```
+
+                2. 使用 kubectl 安裝
+                    > kubectl 安裝方式在更新版本時非常麻煩，且不穩定，推薦使用 Helm 安裝
+
+                    > 使用下面指令或[到官方網站上複製指令](https://metallb.universe.tf/installation/#installation-by-manifest)安裝 MetalLB
+
+                    ```console
+                    $ kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.9/config/manifests/metallb-native.yaml
+                    ```
+
+            - 新增一份 yaml 檔，並以 kubectl 套用此設定，其中 yaml 檔需包含以下內容:
+
+                ```yaml
+                # external-ip-pool.yaml
+                apiVersion: metallb.io/v1beta1
+                kind: IPAddressPool
+                metadata:
+                  name: <IP_POOL_NAME>
+                  namespace: metallb-system
+                spec:
+                  addresses:
+                  - <YOUR_IP_POOL_1>
+                  - <YOUR_IP_POOL_2>
+                  - ...
+
+                ---
+                # l2-advertisement.yaml
+                apiVersion: metallb.io/v1beta1
+                kind: L2Advertisement
+                metadata:
+                  name: l2-advertisement
+                  namespace: metallb-system
+                spec:
+                  ipAddressPools:
+                  - <IP_POOL_NAME>
+                ```
+
+        2. 針對 Services 中 LoadBalancer 的 nginx 服務 spec 新增下列設定
+
+            > 除非有必要，Nginx 官方不推薦使用此方式設定外部 IP
+
+            > 建議每台 Kubernetes 的 node 都設定一組固定的 IP，避免不必要的麻煩
+
+            ```console
+            externalIPs:
+            - <機器對外網卡上設定的固定 IP>
+            ```
+
+            或是使用指令直接套用
+
+            ```console
+            $ kubectl patch svc ingress-nginx-controller -n ingress-nginx -p '{"spec": {"externalIPs": ["<機器對外網卡上設定的固定 IP>"]}}'
+            ```
+
+- [返回目錄](#目錄)
+
+### 安裝 kubernetes-reflector 與 cert-manager
+
+1. 部署 emberstack/kubernetes-reflector
     > 若不使用 cert-manager 或不需使用反射 (複製) secret 的話可以跳過此步驟
 
     > 由於 secret 不可跨 namespace，因故須使用此套件讓 cert-manager 可以把憑證複製到不同的 namespace 中
@@ -675,7 +714,7 @@
         --create-namespace
     ```
 
-26. 部署 cert-manager 進行 TLS 憑證自動更新
+2. 部署 cert-manager 進行 TLS 憑證自動更新
 
     > 請注意，若使用 Let's Encrypt 的 HTTP01 驗證，需開啟連接埠 80
 
@@ -815,7 +854,11 @@
 
         > 挑戰成功之後，該憑證會在過期前 30 天自動進行 renew 的動作
 
-27. 部署服務與相關設定 (Deployments、Service、Ingress、ConfigMap、SecretMap)
+- [返回目錄](#目錄)
+
+### 其它設定
+
+1. 部署服務與相關設定 (Deployments、Service、Ingress、ConfigMap、SecretMap)
 
     > ※ 請記得先將映像 (image) 推到指定的 Registry 中，否則部署後 Pod 將無法正常運作
 
@@ -828,7 +871,7 @@
       ...
     ```
 
-28. 設定 registry 的登入帳號密碼
+2. 設定 registry 的登入帳號密碼
 
     > 由於 Secrets 無法跨命名空間 (namespace) 使用，故如有多個命名空間，每個命名空間都需要部署一份 Secrets
 
@@ -876,82 +919,94 @@
 
     3. 部署應用程式，完成
 
+- [返回目錄](#目錄)
+
 ## 更新軟體包倉庫位址
 
 Kubernete 官方於 2023/08/31 公告由 Google 所維護的倉庫將於 2023/09/13 被凍結 ([參考此文章](https://kubernetes.io/zh-cn/blog/2023/08/31/legacy-package-repository-deprecation/)) 因此需要針對轉體包倉庫的位址進行更新，其更新步驟如下:
 
-- 先透過 `kubectl version --short` 找到目前安裝的 Kubernetes 版本
-- 在 `/etc/yum.repos/` 資料夾下找到 `kubernetes.repo` 檔
-- 透過文字編輯軟體打開該 repo 檔案 (由於是系統檔案，需使用 sudo 或 root 權限)
-- 將其內容調整為如下
-
-> 請將 `<KUBERNETS_VERSION>` 取代為您的 Kubernetes 版本號碼，例如: `1.26`
-
-```repo
-[kubernetes]
-name=Kubernetes
-baseurl=https://pkgs.k8s.io/core:/stable:/v<KUBERNETS_VERSION>/rpm/
-enabled=1
-gpgcheck=1
-gpgkey=https://pkgs.k8s.io/core:/stable:/v<KUBERNETS_VERSION>/rpm/repodata/repomd.xml.key
-exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
-```
-
-- 完成
-
-## 更新 kubeadm 叢集/自簽憑證
-
-若是自行安裝的 K8s ，其 apiserver 等服務所使用的憑證皆為自簽憑證，效期為一年，因此每隔一年就需要進行自簽憑證的重新簽發，可以透過以下的方式進行：
-
-1. 每至少一年更新一次 Control Plane，更新時就會自動重新簽發新的自簽憑證 (推薦)。
-    - 先透過以下指令檢視目前 K8s 版本為何
+1. 先透過以下指令找到目前安裝的 Kubernetes 版本
 
     ```console
     $ kubectl version --short
     ```
 
-    - 透過以下指令查詢目前最新版本的版本號碼
+2. 在 `/etc/yum.repos/` 資料夾下找到 `kubernetes.repo` 檔
+3. 透過文字編輯軟體打開該 repo 檔案 (由於是系統檔案，需使用 sudo 或 root 權限)
+4. 將其內容調整為如下
+
+    > 請將 `<KUBERNETS_VERSION>` 取代為您的 Kubernetes 版本號碼，例如: `1.26`
+
+    ```repo
+    [kubernetes]
+    name=Kubernetes
+    baseurl=https://pkgs.k8s.io/core:/stable:/v<KUBERNETS_VERSION>/rpm/
+    enabled=1
+    gpgcheck=1
+    gpgkey=https://pkgs.k8s.io/core:/stable:/v<KUBERNETS_VERSION>/rpm/repodata/repomd.xml.key
+    exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+    ```
+
+5. 完成
+
+- [返回目錄](#目錄)
+
+## 更新 kubeadm 叢集/自簽憑證
+
+若是自行安裝的 K8s ，其 apiserver 等服務所使用的憑證皆為自簽憑證，效期為一年，因此每隔一年就需要進行自簽憑證的重新簽發，可以透過以下的方式進行：
+
+### 透過更新 Control Plane 重新簽發自簽憑證 (推薦)
+
+官方推薦每至少一年更新一次 Control Plane，更新時就會自動重新簽發新的自簽憑證。
+
+1. 先透過以下指令檢視目前 K8s 版本為何
+
+    ```console
+    $ kubectl version --short
+    ```
+
+2. 透過以下指令查詢目前最新版本的版本號碼
 
     ```console
     # dnf list --showduplicates kubeadm --disableexcludes=kubernetes
     ```
 
-    - 先透過以下指令將結點騰空
+3. 先透過以下指令將結點騰空
 
-        > 將 `<NODE_TO_DRAIN>` 取代為你要騰空的控制面節點名稱
+    > 將 `<NODE_TO_DRAIN>` 取代為你要騰空的控制面節點名稱
 
     ```console
     # kubectl drain <NODE_TO_DRAIN> --ignore-daemonsets
     ```
 
-    - 執行下面指令更新 kubeadm 版本
-        > `<VERSION>` 請取代為你要更新的版本號碼，例如: `1.26.12`
+4. 執行下面指令更新 kubeadm 版本
+    > `<VERSION>` 請取代為你要更新的版本號碼，例如: `1.26.12`
 
     ```console
     # dnf install -y kubeadm-'<VERSION>-*' --disableexcludes=kubernetes
     ```
 
-    - 透過下面指令驗證安裝的 kubeadm 版本
+5. 透過下面指令驗證安裝的 kubeadm 版本
 
     ```console
     $ kubeadm version
     ```
 
-    - 透過下面指令驗證升級計畫
+6. 透過下面指令驗證升級計畫
 
     ```console
     # kubeadm upgrade plan
     ```
 
-    - 執行下面指令套用升級
+7. 執行下面指令套用升級
 
-        > `<VERSION>` 請取代為你要更新的版本號碼，例如: `1.26.12`
+    > `<VERSION>` 請取代為你要更新的版本號碼，例如: `1.26.12`
 
     ```console
     # kubeadm upgrade apply v<VERSION>
     ```
 
-    - 待指令成功執行後，會看到類似下面的輸出，表示升級成功
+8. 待指令成功執行後，會看到類似下面的輸出，表示升級成功
 
     ```console
     [upgrade/successful] SUCCESS! Your cluster was upgraded to "v1.29.x". Enjoy!
@@ -959,56 +1014,57 @@ exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
     [upgrade/kubelet] Now that your control plane is upgraded, please proceed with upgrading your kubelets if you haven't already done so.
     ```
 
-    - 針對有一個以上的控制平面節點，第一個以後的節點請使用指令 `sudo kubeadm upgrade node` 進行升級
-    - 透過下面指令升級 kubelet 與 kubectl
+9. 針對有一個以上的控制平面節點，第一個以後的節點請使用指令 `sudo kubeadm upgrade node` 進行升級
+10. 透過下面指令升級 kubelet 與 kubectl
 
-        > `<VERSION>` 請取代為你要更新的版本號碼，例如: `1.26.12`
+    > `<VERSION>` 請取代為你要更新的版本號碼，例如: `1.26.12`
 
-        > 這邊的版本號碼請盡量與 kubeadm 的版本號碼一致
+    > 這邊的版本號碼請盡量與 kubeadm 的版本號碼一致
 
     ```console
     # dnf install -y kubelet-'<VERSION>-*' kubectl-'<VERSION>-*' --disableexcludes=kubernetes
     ```
 
-    - 透過以下指令重啟 `kubelet`
+11. 透過以下指令重啟 `kubelet`
 
     ```console
     $ sudo systemctl daemon-reload
     $ sudo systemctl restart kubelet
     ```
 
-    - 執行以下兩個指令更新 `~/.kube/config` 中的憑證
+12. 執行以下兩個指令更新 `~/.kube/config` 中的憑證
 
     ```console
     $ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
     $ sudo chown $(id -u):$(id -g) $HOME/.kube/config
     ```
 
-    - 解除節點的保護
+13. 解除節點的保護
 
-        > 將 `<NODE_TO_DRAIN>` 取代為你的節點名稱
+    > 將 `<NODE_TO_DRAIN>` 取代為你的節點名稱
 
     ```console
     $ kubectl uncordon <NODE_TO_DRAIN>
     ```
 
-2. 手動重新簽發憑證
-    - 透過 SSH 連線到 K8s 的節點
-    - 先透過指令 `kubeadm certs check-expiration` 檢查目前的自簽憑證狀態
-    - 若已過期，可以透過指令 `kubeadm certs renew all` 重新簽發所有自簽憑證
-    - 再透過指令 `systemctl restart kubelet` 重新啟動 kubelet 服務，始之套用這些憑證
-    - 執行以下兩個指令更新 `~/.kube/config` 中的憑證
+- [返回目錄](#目錄)
+
+### 手動重新簽發憑證
+
+1. 透過 SSH 連線到 K8s 的節點
+2. 先透過指令 `kubeadm certs check-expiration` 檢查目前的自簽憑證狀態
+3. 若已過期，可以透過指令 `kubeadm certs renew all` 重新簽發所有自簽憑證
+4. 再透過指令 `systemctl restart kubelet` 重新啟動 kubelet 服務，始之套用這些憑證
+5. 執行以下兩個指令更新 `~/.kube/config` 中的憑證
 
     ```console
     $ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
     $ sudo chown $(id -u):$(id -g) $HOME/.kube/config
     ```
 
-    - 完成
+6. 完成
 
-## 其它資料
-
-- [刪除不在預設命名空間的服務](https://stackoverflow.com/a/67517905)
+- [返回目錄](#目錄)
 
 ## 參考資料
 
@@ -1046,3 +1102,8 @@ exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
 - [使用 kubeadm 進行憑證管理](https://kubernetes.io/zh-cn/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/)
 - [Restart kube-apiserver when provisioned with kubeadm](https://stackoverflow.com/a/42722258)
 - [升級 kubeadm 叢集](https://kubernetes.io/zh-cn/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/)
+- [刪除不在預設命名空間的服務](https://stackoverflow.com/a/67517905)
+
+## 返回目錄
+
+- [返回目錄](#目錄)
