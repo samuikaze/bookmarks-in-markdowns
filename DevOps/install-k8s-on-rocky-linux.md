@@ -99,9 +99,11 @@
 9. 安裝 crio
     - 第一種方式 (推薦)
 
+        > 若 curl 的目標連結失效，請逕至 [cri-o 的倉庫](https://github.com/cri-o/cri-o/)尋找新的連結
+
     ```console
     # mkdir /usr/local/bin/runc
-    # curl https://raw.githubusercontent.com/cri-o/cri-o/main/scripts/get | bash
+    # curl https://raw.githubusercontent.com/cri-o/packaging/main/get | bash
     # systemctl enable --now crio
     ```
 
@@ -226,7 +228,7 @@
 
     > 這邊都是使用「低於 50 台節點的設定檔」，如需大於 50 台節點的設定檔，請至[官方網站下載](https://docs.tigera.io/calico/3.25/getting-started/kubernetes/self-managed-onprem/onpremises#install-calico)
 
-    > `calicoctl` 與 Calico` 的版本請盡量一致，否則下指令時會變得非常麻煩，甚至有部署失敗的可能性
+    > `calicoctl` 與 `Calico` 的版本請盡量一致，否則下指令時會變得非常麻煩，甚至有部署失敗的可能性
 
     > `v3.25.0` 這是安裝的版號，可以到[這邊](https://github.com/projectcalico/calico/releases)檢視可以使用的版號
 
