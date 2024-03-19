@@ -18,6 +18,7 @@
   - [安裝 Helm](#安裝-helm)
   - [安裝 Nginx ingress controller 與 metallb](#安裝-nginx-ingress-controller-與-metallb)
   - [安裝 kubernetes-reflector 與 cert-manager](#安裝-kubernetes-reflector-與-cert-manager)
+  - [安裝 metrics-server](#安裝-metrics-server)
   - [其它設定](#其它設定)
 - [更新軟體包倉庫位址](#更新軟體包倉庫位址)
 - [更新 kubeadm 叢集/自簽憑證](#更新-kubeadm-叢集自簽憑證)
@@ -856,6 +857,41 @@ $ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bas
 
 - [返回目錄](#目錄)
 
+### 安裝 metrics-server
+
+透過 metrics-server 呼叫資源指標 API，可以決定是否進行工作負載擴縮容，部署方式可以透過官方提供的 [Helm Chart](https://artifacthub.io/packages/helm/metrics-server/metrics-server) 進行部署
+
+> 若希望透過 kubectl 部署，請逕自到 [GitHub](https://github.com/kubernetes-sigs/metrics-server?tab=readme-ov-file) 上取得 yaml 檔
+
+> 這邊測試過使用 bitnami 提供的 Helm Chart 部署 metrics-server，Pod 啟動成功後輸入 `kubectl top node` 指令都會說找不到 Metrics API Server，可能是哪邊設定有錯，因此下面使用的是官方提供的 Helm Chart
+
+```bash
+helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+helm repo update
+helm upgrade --install metrics-server metrics-server/metrics-server -n kube-system
+```
+
+其中若是地端 Kubernetes，需針對 `defaultArgs` 增加以下兩個參數
+
+```yaml
+defaultArgs:
+  ...
+  # 若是將 metrics-server 部署到 Control Plane 節點
+  # 且沒有域名可以直接存取節點，需增加此參數
+  - --kubelet-preferred-address-types=InternalIP
+  # 自簽憑證沒有這條會起不來
+  - --kubelet-insecure-tls
+```
+
+待 Pod 啟動成功後，可以透過指令 `kubectl top nodes` 檢查，輸出若類似下面的樣子表示部署成功
+
+```console
+NAME        CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+node.name   1050m        8%     35534Mi         59%
+```
+
+- [返回目錄](#目錄)
+
 ### 其它設定
 
 1. 部署服務與相關設定 (Deployments、Service、Ingress、ConfigMap、SecretMap)
@@ -1103,6 +1139,13 @@ Kubernete 官方於 2023/08/31 公告由 Google 所維護的倉庫將於 2023/09
 - [Restart kube-apiserver when provisioned with kubeadm](https://stackoverflow.com/a/42722258)
 - [升級 kubeadm 叢集](https://kubernetes.io/zh-cn/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/)
 - [刪除不在預設命名空間的服務](https://stackoverflow.com/a/67517905)
+- [Pod 水平自動擴縮](https://kubernetes.io/zh-cn/docs/tasks/run-application/horizontal-pod-autoscale/)
+- [kubernetes-sigs/metrics-server](https://github.com/kubernetes-sigs/metrics-server)
+- [metrics-server - Artifact HUB](https://artifacthub.io/packages/helm/metrics-server/metrics-server)
+- [kubectl top node `error: metrics not available yet` . Using metrics-server as Heapster Depricated](https://stackoverflow.com/a/66713681)
+- [Metrics server not working in Kubernetes cluster](https://stackoverflow.com/a/64029310)
+- [How to make k8s cpu and memory HPA work together?](https://stackoverflow.com/a/73555411)
+- [[Markdown] An option to highlight a "Note" and "Warning" using blockquote (Beta)](https://github.com/orgs/community/discussions/16925)
 
 ## 返回目錄
 
