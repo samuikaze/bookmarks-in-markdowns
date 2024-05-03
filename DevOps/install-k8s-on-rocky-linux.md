@@ -2,10 +2,13 @@
 
 要在 Rocky Linux 9 下安裝 Kubernetes 請依據下方步驟進行安裝
 
-> ※ 以下步驟僅適用於裸機安裝 (Bare-Metal)，雲服務不適用於本文章
+> [!NOTE]
+> 以下步驟僅適用於裸機安裝 (Bare-Metal)，雲服務不適用於本文章
 
-> ※ 所有的指令前綴為 `$` 表不需要 root 權限， `#` 則需要 root 權限，`>` 表示繼續輸入。
+> [!NOTE]
+> 所有的指令前綴為 `$` 表不需要 root 權限， `#` 則需要 root 權限，`>` 表示繼續輸入。
 
+> [!NOTE]
 > 文件中以 `<` 和 `>` 包住且裡面的文字為**大寫英文以底線區隔單字者**，表該參數需要自行取代為正確的值。例如: `<NETWORK_IP>` 就需要取代成**正確的網路介面卡 IP**
 
 ## 目錄
@@ -36,11 +39,12 @@
 
 1. 設定機器域名與名稱
 
+    > [!NOTE]
     > 這段其實非必要，只是方便測試時不用一直打 IP。
 
     > 執行指令前請先確認網路是否已經完成設定，特別是 IP 部分，請盡量不要使用 DHCP 自動派發
 
-    > **&lt;HOSTNAME&gt; 需符合 RFC 1123 DNS 標籤的規範**
+    > **`<HOSTNAME>` 需符合 RFC 1123 DNS 標籤的規範**
 
     ```console
     # hostnamectl set-hostname <HOSTNAME>
@@ -55,6 +59,7 @@
 
 3. 關閉 SELinux (**不推薦**)
 
+    > [!CAUTION]
     > **非常不推薦**關閉 SELinux，這可能會使伺服器暴露於危險之中，應當保持其開啟，並於需要時設定其策略
 
     ```console
@@ -64,8 +69,10 @@
 
 4. 關閉 firewalld (防火牆)
 
+    > [!NOTE]
     > 由於 Calico 和 firewalld 都是相依於 iptables 的實作，保持 firewalld 啟用會導致 Kubernetes 中所有的 Pod 都無法利用 Cluster IP 互相連線，若要保持開啟，則 ingress 中必須要增加 `nginx.ingress.kubernetes.io/service-upstream=true` 的 annotation，但這僅適用於 nginx ingress，若非使用 nginx ingress 或必須使用 Pod IP 相互溝通，則必須關閉 firewalld。
 
+    > [!NOTE]
     > Crio 本身有自帶 CNI，但由於文件過少，且未找到如何將防火牆設定帶進來，因此不使用其自帶的 CNI。
 
     > 後面會利用 Calico 網路策略去管理防火牆的策略
@@ -123,7 +130,8 @@
 1. 安裝 crio
     - 第一種方式 (推薦)
 
-        > 若 curl 的目標連結失效，請逕至 [cri-o 的倉庫](https://github.com/cri-o/cri-o/)尋找新的連結
+        > [!NOTE]
+        > 若 curl 的目標連結失效，請逕至 [cri-o 的儲存庫](https://github.com/cri-o/cri-o/)尋找新的連結
 
     ```console
     # mkdir /usr/local/bin/runc
@@ -141,8 +149,9 @@
     # systemctl enable --now crio
     ```
 
-2. 新增 Repo list
+2. 新增套件倉庫清單
 
+    > [!IMPORTANT]
     > 請將 `<KUBERNETS_VERSION>` 取代為您的 Kubernetes 版本號碼，例如: `1.26`
 
     ```console
@@ -179,7 +188,8 @@
 
 6. 初始化 kubeadm
 
-    > ※ `<POD_NETWORK_CIDR>` 請更改為預計讓 pod 使用的網段，此設定會影響後續安裝 Calico 的相關設定
+    > [!NOTE]
+    > `<POD_NETWORK_CIDR>` 請更改為預計讓 Pod 使用的網段，此設定會影響後續安裝 Calico 的相關設定
 
     ```console
     # kubeadm init \
@@ -197,7 +207,8 @@
 
 8. 讓 Control Plane 機器也可以部署 Pod
 
-    > ※ 若此指令無效，請執行 `kubectl describe nodes` 去看目前 Control Plane 那台 node 目前的汙點名稱為何，將 `node-role.kubernetes.io/control-plane:NoSchedule` 變更為正確的汙點名稱就可以了
+    > [!NOTE]
+    > 若此指令無效，請執行 `kubectl describe nodes` 去看目前 Control Plane 那台節點目前的汙點名稱為何，將 `node-role.kubernetes.io/control-plane:NoSchedule` 變更為正確的汙點名稱就可以了
 
     ```console
     kubectl taint nodes --all node-role.kubernetes.io/control-plane:NoSchedule-
@@ -209,11 +220,11 @@
 
 1. 安裝 calicoctl
 
-    > 使用雲服務可以跳過此步驟，雲服務供應商會有自己的 CNI 介面
-
+    > [!NOTE]
     > 網址中的 `latest` 為版本號碼，可以到[這邊](https://github.com/projectcalico/calico/releases)檢視目前的版號為何
 
-    > 請注意，版號若與 Calico 版本不同，下指令會變得非常麻煩，甚至有部署設定失敗的可能性
+    > [!WARNING]
+    > 請注意安裝的版本若與 Calico 不同，指令的執行會變得非常麻煩，甚至有部署設定失敗的可能性
 
     ```console
     # cd /usr/local/bin
@@ -222,8 +233,6 @@
     ```
 
 2. 設定 calicoctl 對於 etcd 的連線 (這邊使用 Kubernetes 自帶的 etcd 資料庫)
-
-    > 使用雲服務可以跳過此步驟，雲服務供應商會有自己的 CNI 介面
 
     ```console
     # mkdir /etc/calico
@@ -239,8 +248,7 @@
 
 3. 避免 NetworkManager 防止 Calico 修改路由表規則
 
-    > 使用雲服務可以跳過此步驟，雲服務供應商會有自己的 CNI 介面
-
+    > [!IMPORTANT]
     > 請注意，這邊修改完必須重新開機後才會生效
 
     ```console
@@ -252,12 +260,13 @@
 
 4. 安裝 Calico 當作 CNI
 
-    > 使用雲服務可以跳過此步驟，雲服務供應商會有自己的 CNI 介面
-
+    > [!NOTE]
     > 這邊都是使用「低於 50 台節點的設定檔」，如需大於 50 台節點的設定檔，請至[官方網站下載](https://docs.tigera.io/calico/3.25/getting-started/kubernetes/self-managed-onprem/onpremises#install-calico)
 
+    > [!IMPORTANT]
     > `calicoctl` 與 `Calico` 的版本請盡量一致，否則下指令時會變得非常麻煩，甚至有部署失敗的可能性
 
+    > [!NOTE]
     > `v3.25.0` 這是安裝的版號，可以到[這邊](https://github.com/projectcalico/calico/releases)檢視可以使用的版號
 
     - 下載 kubectl 的 yaml 檔案
@@ -268,21 +277,26 @@
 
     - 若前面的 `<POD_NETWORK_CIDR>` 不是設定為 `192.168.0.0/16`，請在這邊打開文件搜尋 `CALICO_IPV4POOL_CIDR`，把該段 env 註解打開後修改為自己的 Pod 網段即可
 
-    > 官方表示即便不改，Calico 也會自動偵測，如果不放心的話還是改一下比較妥當
+    > [!NOTE]
+    > 官方文件中表示即便不更改此設定 Calico 也會自動偵測
 
     - 執行 `kubectl apply -f calico.yaml` 套用設定檔到 Kubernetes，待所有 Pod 都 Up 後就算安裝完成
 
+    > [!TIP]
     > 安裝完成後部分 Pod 的 IP 可能不是正確的，請利用 Deployment 等方式重啟 Pod 即可。
 
 5. 設定 Calico 的網路策略
 
+    > [!IMPORTANT]
     > 所有與 calico 相關的網路策略皆須使用 `calicoctl apply -f <FULL_PATH_TO_FILE>` 套用才會生效
 
     - 設定開啟的 Port 避免被意外切斷而無法提供服務，以下的埠號由[官方文件提供](https://docs.tigera.io/calico/3.25/network-policy/hosts/protect-hosts#avoid-accidentally-cutting-all-host-connectivity)
 
-        > 10251 與 10252 連接埠可以看[這篇文章](https://stackoverflow.com/a/67397857)
+        > [!NOTE]
+        > 連接埠 10251 與 10252 可以看[這篇文章](https://stackoverflow.com/a/67397857)的說明
 
-        > 建議先以指令 `calicoctl get felixconfiguration default --export -o yaml > default-felix-config.yaml` 取出目前設定檔內容再進行修改
+        > [!IMPORTANT]
+        > 若非第一次設定 Calico，建議先以指令 `calicoctl get felixconfiguration default --export -o yaml > default-felix-config.yaml` 取出目前設定檔內容進行修改後再重新套用其設定
 
         ```yaml
         # default-felix-config.yaml
@@ -300,7 +314,7 @@
           # 如果需要開啟應用程式層級策略，請將下面的註解打開
           # 網路策略如果是用路徑 (path) 決定可不可以連入者須開啟
           # policySyncPathPrefix: '/var/run/nodeagent'
-          # 如需允許容器到本機的流量，請將註解打開
+          # 如需允許容器到節點主機的流量，請將註解打開
           # defaultEndpointToHostAction: Accept
           # 允許入站流量 (in-bound)
           FailsafeInboundHostPorts:
@@ -351,8 +365,10 @@
 
         1. 先套用以下策略測試 Calico 全域網路策略是否正常運作
 
+            > [!IMPORTANT]
             > 請務必先執行 Failsafe 設定，也就是前一大項的設定，否則策略套用後可能造成 SSH 服務中斷
 
+            > [!IMPORTANT]
             > 請將以下內容存成 yaml 檔案，方便後續清除策略
 
             ```yaml
@@ -422,10 +438,12 @@
             - 以 `curl http://<ANY_POD_IP_IN_CLUSTER>/` 測試是否可以正常連上任一的 Pod，若可以連上，表示策略正常運作
         3. 執行 `calicoctl delete -f <TEST_CALICO_FILE_NAME>` 清除策略
 
+        > [!IMPORTANT]
         > 清除策略後請務必再次進行 curl 連線 Google 確保這策略是否正常被清除
 
     - 設定全域網路策略
 
+        > [!TIP]
         > 以下部分可以全部組成一個 yaml 檔案進行套用
 
         1. 允許內部流量，並將所有外部流量拒絕掉
@@ -564,12 +582,12 @@
 
 ### 安裝 Helm
 
-透過以下指令進行安裝
+Helm 於安裝、更新或移除 nginx-ingress 等功能時非常實用，可以透過以下指令進行安裝
 
-> 此步驟非必要步驟，如果只想使用 kubectl 工具進行 Kubernetes 相關管理，可以跳過此步驟
+> [!NOTE]
+> 此步驟非必要步驟，若只想透過 kubectl 工具進行 Kubernetes 相關管理，可以跳過此步驟
 
-> Helm 在更新 nginx-ingress 等功能時非常實用，比起使用 kubectl 去更新還出一堆錯誤，不如使用 Helm 請它幫你管理
-
+> [!TIP]
 > 下面這行也可以到[官方文檔中複製](https://helm.sh/docs/intro/install/#from-script)
 
 ```console
@@ -582,15 +600,15 @@ $ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bas
 
 1. 部署 nginx ingress controller
 
-    - 使用 Helm 安裝
+    - 使用 Helm 安裝 (推薦)
+        > [!IMPORTANT]
         > 利用 Helm 安裝的 Service 中 `externalTrafficPolicy` 預設為 `Cluster`，這會導致入站 IP 全部都是 Node 的 IP，若要看到外部 IP，請將其設為 `Local`
 
-        > 另外 TCP 與 UDP Service 暴露設定也可以在 Helm 中直接設定
+        > [!IMPORTANT]
+        > 另外 TCP 與 UDP 服務的暴露設定也需在 Helm 中設定
 
         - 使用 Bitnami 提供的 Repo 安裝
-
-            > 使用 Repository 的方式未來升級版本會比較方便
-
+            > [!NOTE]
             > 使用 Bitnami 的 Repo 進行安裝會額外安裝 `default-backend`，用以接受所有不符合 Ingress 規則的入站流量
 
             ```console
@@ -600,8 +618,8 @@ $ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bas
             ```
 
         - 使用官方提供的指令
-
-            > 這條指令如果已經安裝過 nginx-ingress，則它會進行更新，若未安裝過，則會進行安裝
+            > [!NOTE]
+            > 此指令會在已經安裝過 nginx-ingress 的節點進行版本更新，反之則會進行安裝
 
             ```console
             $ helm upgrade --install ingress-nginx ingress-nginx \
@@ -610,21 +628,17 @@ $ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bas
             ```
 
     - 使用 kubectl 安裝
-        > ※ 建議每次都從[官方文件](https://kubernetes.github.io/ingress-nginx/deploy/)中複製 yaml 檔網址，以確保 ingress 版本是最新的穩定版本
-
-        > kubectl 安裝方式在更新版本時非常麻煩，且不穩定，推薦使用 Helm 安裝
+        > [!IMPORTANT]
+        > 建議每次安裝都從[官方文件](https://kubernetes.github.io/ingress-nginx/deploy/)中複製 yaml 檔的網址，以確保 ingress 版本是最新的穩定版本
 
         ```console
         kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/cloud/deploy.yaml
         ```
 
 2. LoadBalancer 設定外部 IP
-
-    > 使用雲服務 (例: AWS 等)可以跳過此項設定，K8s 會自動綁訂雲服務供應商的 Load Balancer IP
-
     - 若是使用裸機 (Bare-Metal) 安裝，有以下兩種方式可以設定對外 IP
-        1. 使用 [MetalLB](https://metallb.universe.tf/)
-            - 調整 kube-proxy 設定
+        - 使用 [MetalLB](https://metallb.universe.tf/)
+            1. 調整 kube-proxy 設定
 
                 ```console
                 $ kubectl get configmap kube-proxy -n kube-system -o yaml | \
@@ -632,9 +646,8 @@ $ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bas
                     kubectl apply -f - -n kube-system
                 ```
 
-            - 安裝
-                1. 使用 Helm 安裝
-                    > 使用 Helm 安裝日後更新時會比較快速且穩定
+            2. 安裝
+                1. 使用 Helm 安裝 (推薦)
 
                     ```console
                     $ helm repo add metallb https://metallb.github.io/metallb
@@ -643,15 +656,14 @@ $ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bas
                     ```
 
                 2. 使用 kubectl 安裝
-                    > kubectl 安裝方式在更新版本時非常麻煩，且不穩定，推薦使用 Helm 安裝
-
+                    > [!TIP]
                     > 使用下面指令或[到官方網站上複製指令](https://metallb.universe.tf/installation/#installation-by-manifest)安裝 MetalLB
 
                     ```console
                     $ kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.9/config/manifests/metallb-native.yaml
                     ```
 
-            - 新增一份 yaml 檔，並以 kubectl 套用此設定，其中 yaml 檔需包含以下內容:
+            3. 新增一份 yaml 檔，並以 kubectl 套用此設定，其中 yaml 檔需包含以下內容:
 
                 ```yaml
                 # external-ip-pool.yaml
@@ -678,10 +690,12 @@ $ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bas
                   - <IP_POOL_NAME>
                 ```
 
-        2. 針對 Services 中 LoadBalancer 的 nginx 服務 spec 新增下列設定
+        - 針對 Services 中 LoadBalancer 的 nginx 服務 spec 新增下列設定
 
+            > [!WARNING]
             > 除非有必要，Nginx 官方不推薦使用此方式設定外部 IP
 
+            > [!IMPORTANT]
             > 建議每台 Kubernetes 的 node 都設定一組固定的 IP，避免不必要的麻煩
 
             ```console
@@ -700,11 +714,11 @@ $ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bas
 ### 安裝 kubernetes-reflector 與 cert-manager
 
 1. 部署 emberstack/kubernetes-reflector
+
+    由於 secrets 不可跨命名空間，因故須使用此套件讓 cert-manager 可以把憑證複製到不同的命名空間中，可以參閱[官方文件](https://github.com/emberstack/kubernetes-reflector)的說明
+
+    > [!NOTE]
     > 若不使用 cert-manager 或不需使用反射 (複製) secret 的話可以跳過此步驟
-
-    > 由於 secret 不可跨 namespace，因故須使用此套件讓 cert-manager 可以把憑證複製到不同的 namespace 中
-
-    > 可以參閱[官方文件](https://github.com/emberstack/kubernetes-reflector)
 
     ```console
     $ helm repo add emberstack https://emberstack.github.io/helm-charts
@@ -717,11 +731,11 @@ $ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bas
 
 2. 部署 cert-manager 進行 TLS 憑證自動更新
 
+    > [!NOTE]
     > 請注意，若使用 Let's Encrypt 的 HTTP01 驗證，需開啟連接埠 80
 
     1. 安裝 cert-manager
-        - 使用 Helm
-            > 使用 Helm 安裝日後更新時會比較快速且穩定
+        - 使用 Helm (推薦)
 
             ```console
             $ helm repo add jetstack https://charts.jetstack.io
@@ -735,12 +749,12 @@ $ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bas
             ```
 
         - 使用 kubectl
-            > kubectl 安裝方式在更新版本時非常麻煩，且不穩定，推薦使用 Helm 安裝
 
             ```console
             $ kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
             ```
 
+            > [!NOTE]
             > Google Kubernetes Engine 可能會發生權限錯誤的問題，如使用 GKE 無法安裝，請接著套用下面的指令
 
             ```console
@@ -751,10 +765,13 @@ $ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bas
 
     2. 建立 Issuer 和 Certificate 宣告，並以 `kubectl apply -f <YAML_NAME>` 套用
 
+        > [!IMPORTANT]
         > 測試請使用 staging 伺服器以避免超過申請限制
 
+        > [!IMPORTANT]
         > 完成測試後要進行正式申請前，除了要把伺服器網址換掉外，先執行 `kubectl delete` 將先前的 issuer 和 certificate 宣告移除後，**將測試申請的無效憑證從 secret 移除**，再執行一次 `kubectl apply` 後，cert-manager 才會進行正式的憑證申請
 
+        > [!NOTE]
         > 頂級網域的擁有者不是自己的子網域 (例: *.freedynamicdns.net 這類 no-ip 服務申請到的域名)，其憑證宣告需逐個網域宣告
 
         ```yaml
@@ -822,10 +839,13 @@ $ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bas
 
     3. Calico 新增允許 80/TCP 流量
 
+        > [!IMPORTANT]
         > 如果前面的網路策略有儲存成一份 yaml 檔，請直接修改它後進行套用，如果沒有請先取出目前的設定值並修改後再進行套用，**否則既有的策略可能會被洗掉**
 
-        > 重申一遍，套用網路策略請一律以 `calicoctl apply -f <POLICY_FILE>` 進行套用，避免策略沒有成功套用
+        > [!NOTE]
+        > 雖然 Calico 的策略可以透過 `kubectl` 與 `calicoctl` 工具進行套用，但仍建議透過 `calicoctl` 進行策略套用，避免策略沒有成功套用
 
+        > [!IMPORTANT]
         > 除了 Calico 外，若有路由器或防火牆，請記得也要允許 80/TCP 的流量
 
         ```yaml
@@ -849,10 +869,13 @@ $ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bas
         ```
 
     4. 使用指令 `kubectl get challenges --all-namespaces` 看目前 ACME 挑戰的狀態，直至成功為止
+        > [!NOTE]
         > cert-manager 會起一個 solver 的 Pod、Service 和 Ingress，完成後這些資源都會被自動移除
 
+        > [!NOTE]
         > 挑戰成功的話，secret 會有 `tls.crt` 和 `tls.key` 兩個鍵值對，未成功前只會有 `tls.key` 一個鍵值對
 
+        > [!NOTE]
         > 挑戰成功之後，該憑證會在過期前 30 天自動進行 renew 的動作
 
 - [返回目錄](#目錄)
@@ -861,8 +884,10 @@ $ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bas
 
 透過 metrics-server 呼叫資源指標 API，可以決定是否進行工作負載擴縮容，部署方式可以透過官方提供的 [Helm Chart](https://artifacthub.io/packages/helm/metrics-server/metrics-server) 進行部署
 
+> [!NOTE]
 > 若希望透過 kubectl 部署，請逕自到 [GitHub](https://github.com/kubernetes-sigs/metrics-server?tab=readme-ov-file) 上取得 yaml 檔
 
+> [!NOTE]
 > 這邊測試過使用 bitnami 提供的 Helm Chart 部署 metrics-server，Pod 啟動成功後輸入 `kubectl top node` 指令都會說找不到 Metrics API Server，可能是哪邊設定有錯，因此下面使用的是官方提供的 Helm Chart
 
 ```bash
@@ -896,9 +921,11 @@ node.name   1050m        8%     35534Mi         59%
 
 1. 部署服務與相關設定 (Deployments、Service、Ingress、ConfigMap、SecretMap)
 
-    > ※ 請記得先將映像 (image) 推到指定的 Registry 中，否則部署後 Pod 將無法正常運作
+    > [!IMPORTANT]
+    > 請記得先將映像 (image) 推到指定的 Registry 中，否則部署後 Pod 將無法正常運作
 
-    > ※ 若 ingress-nginx 無法透過 Pod 的 IP 連上 Pod (未安裝 CNI 或未關閉防火牆)，請將下面這行加到該 App 的 Ingress 的 annotation 中
+    > [!NOTE]
+    > 若 ingress-nginx 無法透過 Pod 的 IP 連上 Pod (未安裝 CNI 或未關閉防火牆)，請將下面這行加到該 App 的 Ingress 的 annotation 中
 
     ```yaml
     annotation:
@@ -909,14 +936,18 @@ node.name   1050m        8%     35534Mi         59%
 
 2. 設定 registry 的登入帳號密碼
 
+    > [!IMPORTANT]
     > 由於 Secrets 無法跨命名空間 (namespace) 使用，故如有多個命名空間，每個命名空間都需要部署一份 Secrets
 
-    > 雖然 `emberstack/kubernetes-reflector` 可以反射 secret 至不同的 namespace，但後續仍要繫結 secret 與 service account，因此不建議使用反射
+    > [!TIP]
+    > 可以使用 `emberstack/kubernetes-reflector` 反射 secret 至不同的命名空間
 
     1. 執行以下指令以建立帳號密碼的 Secrets
 
+        > [!NOTE]
         > `--docker-email` 為選填，若沒有設定電子郵件，可以省略此行
 
+        > [!IMPORTANT]
         > 請注意，命名空間 (Namespace) 請務必與 Pod 相同，否則無法讀到此 Secrets，Secrets 本身的名稱則無限制
 
         ```txt
@@ -930,14 +961,17 @@ node.name   1050m        8%     35534Mi         59%
 
     2. 套用 Secrets 至 Pod 中
 
+        > [!NOTE]
         > 下面兩種方式擇一使用就可以了
 
-        - 直接在 Deployment 中代入 Secrets:
+        - 直接在 Deployment 中代入 Secrets (推薦)
 
             在 `spec.template.spec` 底下新增下面語句
 
+            > [!IMPORTANT]
             > 請注意，Secrets 請務必與 Deployment 部署的 Pod 所屬的命名空間相同，否則會讀不到
 
+            > [!IMPORTANT]
             > 請將 `<YOUR_REGISTRY_CREDENTIALS_SECRETS>` 取代為正確的值
 
             ```txt
@@ -949,8 +983,10 @@ node.name   1050m        8%     35534Mi         59%
 
             - 打開終端機並執行 `kubectl patch serviceaccount default -n <NAMESPACE> -p '{"imagePullSecrets": [{"name": "<YOUR_REGISTRY_CREDENTIALS_SECRETS>"}]}'`
 
+            > [!IMPORTANT]
             > 請將 `<NAMESPACE>` 與 `<YOUR_REGISTRY_CREDENTIALS_SECRETS>` 取代為正確的值
 
+            > [!TIP]
             > 若 Service Account 有特別指定，請將 `default` 調整為該 Service Account 的名稱
 
     3. 部署應用程式，完成
@@ -971,6 +1007,7 @@ Kubernete 官方於 2023/08/31 公告由 Google 所維護的倉庫將於 2023/09
 3. 透過文字編輯軟體打開該 repo 檔案 (由於是系統檔案，需使用 sudo 或 root 權限)
 4. 將其內容調整為如下
 
+    > [!IMPORTANT]
     > 請將 `<KUBERNETS_VERSION>` 取代為您的 Kubernetes 版本號碼，例如: `1.26`
 
     ```repo
@@ -1009,6 +1046,7 @@ Kubernete 官方於 2023/08/31 公告由 Google 所維護的倉庫將於 2023/09
 
 3. 先透過以下指令將結點騰空
 
+    > [!NOTE]
     > 將 `<NODE_TO_DRAIN>` 取代為你要騰空的控制面節點名稱
 
     ```console
@@ -1016,6 +1054,7 @@ Kubernete 官方於 2023/08/31 公告由 Google 所維護的倉庫將於 2023/09
     ```
 
 4. 執行下面指令更新 kubeadm 版本
+    > [!NOTE]
     > `<VERSION>` 請取代為你要更新的版本號碼，例如: `1.26.12`
 
     ```console
@@ -1035,7 +1074,7 @@ Kubernete 官方於 2023/08/31 公告由 Google 所維護的倉庫將於 2023/09
     ```
 
 7. 執行下面指令套用升級
-
+    > [!NOTE]
     > `<VERSION>` 請取代為你要更新的版本號碼，例如: `1.26.12`
 
     ```console
@@ -1052,9 +1091,10 @@ Kubernete 官方於 2023/08/31 公告由 Google 所維護的倉庫將於 2023/09
 
 9. 針對有一個以上的控制平面節點，第一個以後的節點請使用指令 `sudo kubeadm upgrade node` 進行升級
 10. 透過下面指令升級 kubelet 與 kubectl
-
+    > [!NOTE]
     > `<VERSION>` 請取代為你要更新的版本號碼，例如: `1.26.12`
 
+    > [!IMPORTANT]
     > 這邊的版本號碼請盡量與 kubeadm 的版本號碼一致
 
     ```console
@@ -1076,7 +1116,7 @@ Kubernete 官方於 2023/08/31 公告由 Google 所維護的倉庫將於 2023/09
     ```
 
 13. 解除節點的保護
-
+    > [!NOTE]
     > 將 `<NODE_TO_DRAIN>` 取代為你的節點名稱
 
     ```console
@@ -1087,7 +1127,7 @@ Kubernete 官方於 2023/08/31 公告由 Google 所維護的倉庫將於 2023/09
 
 ### 手動重新簽發憑證
 
-1. 透過 SSH 連線到 K8s 的節點
+1. 透過 SSH 連線到 Kubernetes 的節點
 2. 先透過指令 `kubeadm certs check-expiration` 檢查目前的自簽憑證狀態
 3. 若已過期，可以透過指令 `kubeadm certs renew all` 重新簽發所有自簽憑證
 4. 再透過指令 `systemctl restart kubelet` 重新啟動 kubelet 服務，始之套用這些憑證
