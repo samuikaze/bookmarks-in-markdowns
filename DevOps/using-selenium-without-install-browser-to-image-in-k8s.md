@@ -3,7 +3,8 @@
 使用 Python 爬取網頁資料是很常見的事情，但為了爬動態網頁裝了 selenium 套件後又得裝瀏覽器進 image，想必這 image 的大小會非常可觀
 因此這邊會利用 Kubernetes 官方提供的範例說明如何把瀏覽器架在另一個容器中，而不是將整個瀏覽器塞到 image 中
 
-> 請注意: 僅適用於 Selenium 4.x 版本
+> [!NOTE]
+> 請注意，僅適用於 Selenium 4.x 版本
 
 ## 使用
 
@@ -200,7 +201,7 @@
     > 請務必注意，Selenium Hub 如果會重新啟動，表示 Selenium 執行過程中有程式掛掉了，請把問題抓出來，否則每拋出一次例外，Selenium Hub 就會重新啟動一次
 
     在建構 driver 時，除了要使用 `webdriver.Remote()` 進行建構外，帶入 `options` 後，需額外帶 `command_executor='http://selenium-hub.<NAMESPACE>:4444/wd/hub'` 參數給建構式，這樣 Selenium 才會去呼叫這個 URL 中提供的瀏覽器節點取得網頁資料，更多的說明或測試腳本可以在官方儲存庫中取得
-    
+
 ## 節點重啟後無法正常爬取資料
 
 發生原因目前不明，但已知遇到此問題時重新部署或重新啟動瀏覽器的 Pod 就可以解決
