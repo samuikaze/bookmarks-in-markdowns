@@ -1,0 +1,166 @@
+<!-- markdownlint-disable MD028 -->
+
+# Windows 11 啟用 WSL 2 並安裝 Rocky Linux 發佈版
+
+此文章將會說明如何在 Windows 11 中啟用 WSL 2，並安裝 Rocky Linux 發佈版
+
+## 啟用 WSL 2
+
+Windows 11 預設就包含有 WSL 2，因此僅需依據以下步驟啟用 WSL 2 即可:
+
+1. 先透過 Microsoft Store 安裝[新版的 WSL](https://apps.microsoft.com/store/detail/windows-subsystem-for-linux/9P9TQF7MRM4R)
+2. 先執行 `wsl --install` 指令安裝相對應的功能
+3. 重新開機
+4. 打開 Windows 設定 -> 系統 -> 選用功能 -> 更多 Windows 功能 -> 將 `Windows 子系統 Linux 版` 打勾
+5. 重新開機
+6. 打開終端機，再次執行 `wsl --install` 指令
+    > 此指令預設會安裝 Ubuntu 子系統
+7. 若有提示需要重新開機則進行重新開機
+8. 待完成後，透過指令 `wsl -d Ubuntu` 就可以開啟 Ubuntu 的子系統
+
+## 安裝 Rocky Linux 到 WSL 2 中
+
+### 安裝 Rocky Linux
+
+透過以下方式安裝 Rocky Linux 到 WSL 2 中
+
+> 請注意，經過多次測試，目前 Rocky Linux 在 WSL 設定檔中啟用 systemd 會**導致其無法啟動**，建議修改任何設定前都先進行備份
+
+1. 到[官方文件](https://docs.rockylinux.org/guides/interoperability/import_rocky_to_wsl/#steps)中下載所需的版本
+    > 若是執行在 WSL 中，建議下載 Base x86_64 版本，Minimal 版本包含的工具較少，較適合使用於提供服務的容器執行
+
+    > 若 WSL 版本非最新版，需先將 `.tar.xz` 檔解壓縮成 `.tar` 檔
+
+    > 此步驟也可以透過 docker 或 podman 指令將執行中的 Rocky Linux 容器匯出成 `tar` 檔
+    >
+    > ```command
+    > # 透過 docker 匯出
+    > docker export rockylinux:9 > rocky-9-image.tar
+    > # 透過 podman 匯出
+    > podman export rockylinux:9 > rocky-9-image.tar
+    > ```
+
+2. 建立存放資料的資料夾
+3. 透過以下指令將 Rocky Linux 安裝到 WSL 中
+    > `<MACHINE_NAME>` 請取代為機器名稱，這個名稱後續會顯示於 `wsl -l -v` 清單中，進入此機器也需要輸入此名稱
+
+    > `<PATH_TO_CREATED_DIRECTORY>` 請取代為 2. 中建立的資料夾完整路徑
+
+    > `<PATH_TO_TAR_FILE>` 請取代為 1. 中下載的 `.tar.xz` 或 `.tar` 檔位置
+
+    ```command
+    wsl --import <MACHINE_NAME> <PATH_TO_CREATED_DIRECTORY> <PATH_TO_TAR_FILE> --version 2
+    ```
+
+4. 待完成後，透過指令 `wsl -d <MACHINE_NAME>` 就可以開啟 Rocky Linux 的子系統
+    > `<MACHINE_NAME>` 請取代為 3. 中指定的機器名稱
+
+### 啟動後的基礎設定
+
+進入 Rocky Linux 會發現其預設使用 root 使用者登入，可以依據以下步驟執行基本的設定
+
+> 下面的步驟沒有一定的順序，其中有些步驟非必要，可以視需求選擇要不要進行設定
+
+- 設定 DNS
+
+  在主機有安裝防毒軟體的情況下，使用預設的 DNS 設定將無法正常連線到網際網路，需透過以下步驟調整 DNS 設定
+
+  1. 執行指令 `vi /etc/resolve.conf` 編輯 DNS 設定
+      > vi 可以取代為任意的文字編輯工具
+  2. 將原本的 nameserver 註解掉，並新增新的 DNS 設定
+  3. 退出 WSL，透過指令 `wsl -t <MACHINE_NAME>` 停止 WSL，並再透過 `wsl -d <MACHINE_NAME>` 重新啟動 WSL
+      > `<MACHINE_NAME>` 請取代為 3. 中指定的機器名稱
+  4. 完成
+
+- 安裝 sudo，並新增預設的登入使用者
+
+  安裝完後預設登入的使用者為 root，可以透過以下方式調整預設登入的使用者，增加系統安全性
+
+  1. 執行指令 `passwd root` 設定 root 的密碼
+      > 請務必設定 root 密碼，否則日後將無法再透過指令 `su -` 登入 root 帳號
+  2. 執行指令 `dnf install sudo -y` 安裝 `sudo` 工具
+  3. 透過以下指令新增使用者，並設定此使用者為 sudoer
+      > `<USERNAME>` 請取代為使用者名稱
+
+      > 建議設定完成後先透過指令 `su - <USERNAME>` 登入新的使用者後，測試 sudo 是否正常運作
+
+      ```command
+      adduser <USERNAME>
+      passwd <USERNAME>
+      usermod -aG wheel <USERNAME>
+      ```
+
+  4. 執行指令 `vim /etc/wsl.conf` 新增 WSL 設定檔，並寫入以下的設定
+      > vim 可以取代為任意的文字編輯工具
+
+      > `<USERNAME>` 請取代為使用者名稱
+
+      ```conf
+      [user]
+      default=<USERNAME>
+      ```
+
+  5. 退出 WSL，透過指令 `wsl -t <MACHINE_NAME>` 停止 WSL，並再透過 `wsl -d <MACHINE_NAME>` 重新啟動 WSL
+      > `<MACHINE_NAME>` 請取代為正確的機器名稱，可透過指令 `wsl -l -v` 查閱
+
+  6. 若登入的使用者為前面所設定的使用者，則設定成功
+
+## 設定 WSL 預設啟動的發佈版
+
+WSL 預設啟動的發佈版會是第一個安裝的發佈版，若要切換預設啟動的發佈版，可以透過以下方式進行設定
+
+1. 執行指令 `wsl -l -v` 查閱目前已經安裝的發佈版名稱
+2. 執行指令 `wsl --set-default <DISTRO_NAME>` 將預設啟動的發佈版切換到 `<DISTRO_NAME>`
+    > `<DISTRO_NAME>` 請取代為正確的發佈版名稱
+3. 可以透過指令 `wsl -l -v` 確認 `*` 字號是否標示在 2. 中設定的發佈版名稱前方
+4. 完成，下次可以直接執行 `wsl` 指令啟動指定的發佈版了
+
+## VirtualBox 與 WSL 相容
+
+若系統中有安裝 VirtualBox，且啟用 WSL 的方式是透過 Hyper-V 的方式，則可透過以下方式讓 VirtualBox 與 WSL 相容
+> VirtualBox 主要是與 Hyper-V 不相容，因此若啟動 WSL 非使用 Hyper-V 者，不須執行此設定
+
+1. 打開 VirtualBox 安裝資料夾，右鍵打開終端機或複製其路徑，並在終端機中切換到此路徑
+2. 執行以下兩個指令其中一個
+    - 指定特定的虛擬機器啟用此功能
+
+      > `<VM_NAME>` 請取代為虛擬機器的名稱
+
+      ```Powershell
+      ./VBoxManage.exe setextradata "<VM_NAME>" "VBoxInternal/NEM/UseRing0Runloop" 0
+      ```
+
+    - 指令所有虛擬機器都啟用此功能
+
+      ```Powershell
+      ./VBoxManage.exe setextradata global "VBoxInternal/NEM/UseRing0Runloop" 0
+      ```
+
+3. 完成
+
+## WSL 常用指令
+
+- `wsl -l -v`: 查閱目前已安裝的發佈版、執行狀態與 WSL 版本資訊
+- `wsl -d <MACHINE_NAME>`: 啟動指定的發佈版
+  > `<MACHINE_NAME>` 請取代為正確的機器名稱，可透過指令 `wsl -l -v` 查閱
+- `wsl -t <MACHINE_NAME>`: 停止指定的發佈版
+- `wsl --unregiser <MACHINE_NAME>`: 移除指定的發佈版
+  > 請注意，這會將發佈版中所有資料都移除
+- `wsl –-export <MACHINE_NAME> <EXPORT_PATH>`: 備份指定的發佈版
+  > `<MACHINE_NAME>` 請取代為正確的機器名稱，可透過指令 `wsl -l -v` 查閱
+  > `<EXPORT_PATH>` 請取代為 tar 檔輸出路徑
+- `wsl -–import <MACHINE_NAME> <EXPORT_PATH>`: 還原指定的發佈版
+  > `<MACHINE_NAME>` 請取代為正確的機器名稱，可透過指令 `wsl -l -v` 查閱
+  > `<EXPORT_PATH>` 請取代為 tar 檔路徑
+
+## 參考資料
+
+- [Import Rocky Linux to WSL](https://docs.rockylinux.org/guides/interoperability/import_rocky_to_wsl/)
+- [Windows 11 安裝 WSL2](https://hackmd.io/@Kailyn/H1N5OPKlF)
+- [Import any Linux distribution to use with WSL](https://learn.microsoft.com/en-us/windows/wsl/use-custom-distro#import-the-tar-file-into-wsl)
+- [rockylinux - Official Image | Docker Hub](https://hub.docker.com/_/rockylinux)
+- [How To Create a New Sudo-enabled User on Rocky Linux 8 [Quickstart]](https://www.digitalocean.com/community/tutorials/how-to-create-a-new-sudo-enabled-user-on-rocky-linux-8-quickstart)
+- [WSL 的基本命令](https://learn.microsoft.com/zh-tw/windows/wsl/basic-commands)
+- [WSL 中的進階設定組態](https://learn.microsoft.com/zh-tw/windows/wsl/wsl-config)
+- [Windows 10 (2004) 啟用 wsl2, 並與 VirtualBox 6.0+ 共存](https://entr0pia.github.io/arts/2020-07-22-hyper-V%20and%20VirtualBox.html)
+- [備份 WSL](https://hackmd.io/@LHB-0222/WSL2)
