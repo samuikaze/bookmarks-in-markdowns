@@ -1,32 +1,69 @@
 <!-- markdownlint-disable MD028 -->
 
-# Windows 11 啟用 WSL 2 並安裝 Rocky Linux 發佈版
+# Windows 啟用 WSL 2 並安裝 Rocky Linux 發佈版
 
-此文章將會說明如何在 Windows 11 中啟用 WSL 2，並安裝 Rocky Linux 發佈版
+此文章將會說明如何在 Windows 中啟用 WSL 2，並安裝 Rocky Linux 發佈版
 
 ## Table of Contents
 
+- [系統需求](#系統需求)
 - [啟用 WSL 2](#啟用-wsl-2)
+  - [簡易啟用方式](#簡易啟用方式)
+  - [手動啟用方式](#手動啟用方式)
 - [安裝 Rocky Linux 到 WSL 2 中](#安裝-rocky-linux-到-wsl-2-中)
   - [安裝 Rocky Linux](#安裝-rocky-linux)
   - [啟動後的基礎設定](#啟動後的基礎設定)
+- [WSL 存取 Windows 檔案系統](#wsl-存取-windows-檔案系統)
 - [設定 WSL 預設啟動的發佈版](#設定-wsl-預設啟動的發佈版)
 - [備份與還原](#備份與還原)
 - [VirtualBox 與 WSL 相容](#virtualbox-與-wsl-相容)
 - [WSL 常用指令](#wsl-常用指令)
 - [參考資料](#參考資料)
 
+## 系統需求
+
+若要使用 WSL 2，須符合以下系統需求
+
+- Windows 10
+  - x64 系統需使用 1903 (含)以上版本
+  - ARM64 系統需使用 2004 (含)以上版本
+- Windows 11 全版本皆支援
+
+更詳細的系統需求資訊，請從[官方文件](https://learn.microsoft.com/zh-tw/windows/wsl/install-manual#step-2---check-requirements-for-running-wsl-2)中檢視
+
 ## 啟用 WSL 2
 
-Windows 11 預設就包含有 WSL 2，因此僅需依據以下步驟啟用 WSL 2 即可:
+Windows 目前啟用 WSL 2 有兩種方式，下面將會逐一進行說明
 
-1. 先透過 Microsoft Store 安裝[新版的 WSL](https://apps.microsoft.com/store/detail/windows-subsystem-for-linux/9P9TQF7MRM4R)
+### 簡易啟用方式
+
+> 此方式僅較新版的 Windows 支援，若無法使用 `wsl --install` 指令，請使用手動啟用方式啟用 WSL 2
+
+1. 透過 Microsoft Store 安裝[新版的 WSL](https://apps.microsoft.com/store/detail/windows-subsystem-for-linux/9P9TQF7MRM4R)
 2. 打開 Windows 設定 -> 系統 -> 選用功能 -> 更多 Windows 功能 -> 將 `Windows 子系統 Linux 版` 打勾
-3. 執行 `wsl --install` 指令安裝相對應的功能
-    > 此指令預設會安裝 Ubuntu 子系統
-4. 重新開機
+3. 執行指令 `wsl --set-default-version 2` 將 WSL2 設定為預設版本
+4. 執行指令 `wsl --install` 指令啟用需要的 Windows 功能與安裝 Ubuntu 發佈版
 5. 若有提示需要重新開機則進行重新開機
 6. 待完成後，透過指令 `wsl` 就可以開啟 Ubuntu 的子系統
+
+### 手動啟用方式
+
+1. 打開 Powershell 執行以下指令啟用虛擬機器平台
+
+    ```Powershell
+    dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+    ```
+
+2. 重新開機
+3. 透過 Microsoft Store 安裝[新版的 WSL](https://apps.microsoft.com/store/detail/windows-subsystem-for-linux/9P9TQF7MRM4R)
+4. 打開 Windows 設定 -> 系統 -> 選用功能 -> 更多 Windows 功能 -> 將 `Windows 子系統 Linux 版` 打勾
+5. 下載並安裝 [WSL2 Linux 核心更新套件](https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi)
+    > 若網址失效，請透過[官方文件](https://learn.microsoft.com/zh-tw/windows/wsl/install-manual#step-4---download-the-linux-kernel-update-package)下載
+6. 執行指令 `wsl --set-default-version 2` 將 WSL2 設定為預設版本
+7. 透過 `Microsoft Store` 下載 Linux 發行版或執行 `wsl --install` 指令安裝 Linux 發行版
+    > `wsl --install` 指令預設會安裝 Ubuntu 子系統
+8. 若有提示需要重新開機則進行重新開機
+9. 待完成後，透過指令 `wsl` 就可以開啟 Ubuntu 的子系統
 
 ## 安裝 Rocky Linux 到 WSL 2 中
 
@@ -73,7 +110,7 @@ Windows 11 預設就包含有 WSL 2，因此僅需依據以下步驟啟用 WSL 2
 
 - 設定 DNS
 
-  在主機有安裝防毒軟體的情況下，使用預設的 DNS 設定將無法正常連線到網際網路，需透過以下步驟調整 DNS 設定
+  Windows 有安裝防毒軟體或防火牆的情況下，使用預設的 DNS 設定將無法正常連線到網際網路，需透過以下步驟調整 DNS 設定
 
   1. 執行指令 `vi /etc/resolve.conf` 編輯 DNS 設定
       > vi 可以取代為任意的文字編輯工具
@@ -129,7 +166,7 @@ Windows 11 預設就包含有 WSL 2，因此僅需依據以下步驟啟用 WSL 2
       wsl -d <MACHINE_NAME>
       ```
 
-- 安裝 sudo，並新增預設的登入使用者
+- 安裝 `sudo`，並新增預設的登入使用者
 
   安裝完後預設登入的使用者為 root，可以透過以下方式調整預設登入的使用者，增加系統安全性
 
@@ -162,7 +199,7 @@ Windows 11 預設就包含有 WSL 2，因此僅需依據以下步驟啟用 WSL 2
 
   6. 若登入的使用者為前面所設定的使用者，則設定成功
 
-- 安裝 clear 指令
+- 安裝 `clear` 指令
 
   若是透過安裝光碟或 DVD 映像檔進行安裝，`clear` 指令預設會裝在系統中，由於目前此發佈版未包含此指令相關的套件，因此需透過以下指令安裝
 
@@ -170,14 +207,62 @@ Windows 11 預設就包含有 WSL 2，因此僅需依據以下步驟啟用 WSL 2
   dnf install ncurses -y
   ```
 
-- 安裝 podman 指令
+- 安裝 `podman` 指令
 
   透過以下方式安裝 podman 指令
 
   1. 執行指令 `dnf install podman -y` 安裝 podman
   2. 執行指令 `mount --make-rshared /` 讓 `/` 成為 shared mount
+      > 建議將此行加入 `/etc/wsl.conf` 檔中，使其啟動時可以自動執行，如下所示:
+      >
+      > ```conf
+      > [boot]
+      > ...
+      > command="mount --make-rshared /"
+      > ...
+      > ```
+      >
   3. 執行指令 `dnf reinstall shadow-utils` 重新安裝 `shadow-utils`
   4. 完成
+
+- 安裝 `net-tools`
+
+  若有使用 `ifconfig` 指令的需求，則需安裝此套件，可以執行指令 `dnf install net-tools -y` 進行安裝
+
+## WSL 存取 Windows 檔案系統
+
+WSL 可以透過 `/mnt` 目錄存取 Windows 檔案系統，以 `C:\Users\demouser` 為例，在 WSL 中的路徑為 `/mnt/c/Users/demouser`，其中 `/mnt/c` 表示 C 槽，若要換成其它槽區，請修改其值為該槽區代號的小寫英文字母
+
+> Windows 與 Linux 不同，Linux 的檔案系統是大小寫敏感的，因此路徑除了槽區代號外，其它都必須與原本的名稱相同，例: Windows 中資料夾為 `C:\Users\DemoUser`，WSL 中存取 `/mnt/c/Users/demouser` 是找不到該資料夾的
+
+另外透過 Powershell 執行 `wsl` 指令啟動 WSL 者，進入 WSL 的終端機後，其預設的路徑會是 Powershell 執行 `wsl` 指令時的所在目錄
+
+建議可以在 WSL 中建立類似於下方的腳本快速切換到 Windows 的資料夾
+
+```bash
+#!/bin/bash
+# changedir.sh
+
+default() {
+    cd /mnt/c/Users/demouser/Documents
+}
+
+case "$1" in
+default)
+    default
+;;
+*)
+    echo ""
+    echo "To use this script, issue the command below"
+    echo ""
+    echo "    source changedir.sh [ARGS]"
+    echo ""
+    echo "    Allowed arguments:"
+    echo "        default: Change current directory to C:\\Users\\demouser\\Documents"
+    echo ""
+;;
+esac
+```
 
 ## 設定 WSL 預設啟動的發佈版
 
@@ -251,6 +336,7 @@ WSL 預設啟動的發佈版會是第一個安裝的發佈版，若要切換預�
 
 - [Import Rocky Linux to WSL](https://docs.rockylinux.org/guides/interoperability/import_rocky_to_wsl/)
 - [Windows 11 安裝 WSL2](https://hackmd.io/@Kailyn/H1N5OPKlF)
+- [Windows 10 安裝 WSL1、WSL2(手動安裝)](https://hackmd.io/@Kailyn/BkMi80IeF)
 - [Import any Linux distribution to use with WSL](https://learn.microsoft.com/en-us/windows/wsl/use-custom-distro#import-the-tar-file-into-wsl)
 - [rockylinux - Official Image | Docker Hub](https://hub.docker.com/_/rockylinux)
 - [How To Create a New Sudo-enabled User on Rocky Linux 8 [Quickstart]](https://www.digitalocean.com/community/tutorials/how-to-create-a-new-sudo-enabled-user-on-rocky-linux-8-quickstart)
@@ -264,3 +350,6 @@ WSL 預設啟動的發佈版會是第一個安裝的發佈版，若要切換預�
 - [Dockerfile - eniocarboni/docker-rockylinux-systemd](https://github.com/eniocarboni/docker-rockylinux-systemd/blob/main/Dockerfile)
 - [Systemd support is now available in WSL!](https://devblogs.microsoft.com/commandline/systemd-support-is-now-available-in-wsl/#set-the-systemd-flag-set-in-your-wsl-distro-settings)
 - [RHEL 安裝 locale](https://hackmd.io/@yzai/S1vMGJiqq)
+- [How to run command when starting a machine in WSL2](https://superuser.com/a/1717840)
+- [如何使用 WSL 在 Windows 上安裝 Linux](https://learn.microsoft.com/zh-tw/windows/wsl/install)
+- [舊版 WSL 的手動安裝步驟](https://learn.microsoft.com/zh-tw/windows/wsl/install-manual)
