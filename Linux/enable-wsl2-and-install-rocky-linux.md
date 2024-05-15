@@ -123,6 +123,15 @@ Windows 11 預設就包含有 WSL 2，因此僅需依據以下步驟啟用 WSL 2
   dnf install ncurses -y
   ```
 
+- 安裝 podman 指令
+
+  透過以下方式安裝 podman 指令
+
+  1. 執行指令 `dnf install podman -y` 安裝 podman
+  2. 執行指令 `mount --make-rshared /` 讓 `/` 成為 shared mount
+  3. 執行指令 `dnf reinstall shadow-utils` 重新安裝 `shadow-utils`
+  4. 完成
+
 ## 設定 WSL 預設啟動的發佈版
 
 WSL 預設啟動的發佈版會是第一個安裝的發佈版，若要切換預設啟動的發佈版，可以透過以下方式進行設定
@@ -203,3 +212,5 @@ WSL 預設啟動的發佈版會是第一個安裝的發佈版，若要切換預�
 - [Windows 10 (2004) 啟用 wsl2, 並與 VirtualBox 6.0+ 共存](https://entr0pia.github.io/arts/2020-07-22-hyper-V%20and%20VirtualBox.html)
 - [備份 WSL](https://hackmd.io/@LHB-0222/WSL2)
 - [Installing and Using 'Clear' Command | Linux Guide](https://ioflood.com/blog/install-clear-command-linux/)
+- [Podman - Guide 2 WSL](https://www.guide2wsl.com/podman/)
+- [Running podman rootless gives ERRO[0000] cannot setup namespace using newuidmap: exit status 1 #2788](https://github.com/containers/podman/issues/2788)
