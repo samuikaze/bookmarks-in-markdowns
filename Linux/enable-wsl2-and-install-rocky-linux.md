@@ -21,14 +21,12 @@
 Windows 11 預設就包含有 WSL 2，因此僅需依據以下步驟啟用 WSL 2 即可:
 
 1. 先透過 Microsoft Store 安裝[新版的 WSL](https://apps.microsoft.com/store/detail/windows-subsystem-for-linux/9P9TQF7MRM4R)
-2. 先執行 `wsl --install` 指令安裝相對應的功能
-3. 重新開機
-4. 打開 Windows 設定 -> 系統 -> 選用功能 -> 更多 Windows 功能 -> 將 `Windows 子系統 Linux 版` 打勾
-5. 重新開機
-6. 打開終端機，再次執行 `wsl --install` 指令
+2. 打開 Windows 設定 -> 系統 -> 選用功能 -> 更多 Windows 功能 -> 將 `Windows 子系統 Linux 版` 打勾
+3. 執行 `wsl --install` 指令安裝相對應的功能
     > 此指令預設會安裝 Ubuntu 子系統
-7. 若有提示需要重新開機則進行重新開機
-8. 待完成後，透過指令 `wsl -d Ubuntu` 就可以開啟 Ubuntu 的子系統
+4. 重新開機
+5. 若有提示需要重新開機則進行重新開機
+6. 待完成後，透過指令 `wsl` 就可以開啟 Ubuntu 的子系統
 
 ## 安裝 Rocky Linux 到 WSL 2 中
 
