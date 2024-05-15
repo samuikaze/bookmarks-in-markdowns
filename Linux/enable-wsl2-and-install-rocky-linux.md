@@ -34,7 +34,7 @@ Windows 11 預設就包含有 WSL 2，因此僅需依據以下步驟啟用 WSL 2
 
 透過以下方式安裝 Rocky Linux 到 WSL 2 中
 
-> 請注意，經過多次測試，目前 Rocky Linux 在 WSL 設定檔中啟用 systemd 會**導致其無法啟動**，建議修改任何設定前都先進行備份
+> 若要使用 `systemd` 啟動 WSL，請見[啟動後的基礎設定](#啟動後的基礎設定)的安裝 `systemd` 說明，在完成該說明的設定前請勿隨意啟用 WSL 設定中的 systemd 設定，否則會造成 WSL 無法啟動
 
 1. 到[官方文件](https://docs.rockylinux.org/guides/interoperability/import_rocky_to_wsl/#steps)中下載所需的版本
     > 若是執行在 WSL 中，建議下載 Base x86_64 版本，Minimal 版本包含的工具較少，較適合使用於提供服務的容器執行
@@ -81,6 +81,53 @@ Windows 11 預設就包含有 WSL 2，因此僅需依據以下步驟啟用 WSL 2
   3. 退出 WSL，透過指令 `wsl -t <MACHINE_NAME>` 停止 WSL，並再透過 `wsl -d <MACHINE_NAME>` 重新啟動 WSL
       > `<MACHINE_NAME>` 請取代為 3. 中指定的機器名稱
   4. 完成
+
+- 安裝 `systemd`
+
+  此發佈版預設不包含 `systemd` 套件，因此需要自行透過 dnf 進行安裝，下面是其安裝與起用步驟
+
+  1. 透過以下指令安裝 `systemd`
+
+      ```command
+      dnf install systemd -y
+      ```
+
+  2. 在 /etc/wsl.conf 中加入以下設定
+
+      ```conf
+      [boot]
+      systemd=true
+      ```
+
+  3. 退出 WSL，透過以下指令重新啟動 WSL
+
+      ```Powershell
+      wsl -t <MACHINE_NAME>
+      wsl -d <MACHINE_NAME>
+      ```
+
+  4. 完成
+
+- 變更語言
+
+  Rocky Linux 預設安裝完後為英文版，若要切換成中文，請依據以下步驟進行設定
+
+  > 請注意，由於 `localectl` 涉及 `systemd` 服務，請先完成 `systemd` 的設定
+
+  1. 透過指令 `locale -a` 查詢目前已安裝的語系
+      > 若需求語系已經安裝，可以跳到 5.
+  2. 執行指令 `dnf list langpacks-*` 列出所有可安裝的語系
+  3. 執行指令 `dnf install langpacks-<LANG_NAME>` 安裝需求語系
+      > `<LANG_NAME>` 請取代為 2. 中查詢到的語系名稱
+  4. 再透過指令 `locale -a` 查詢目前已安裝的語系
+  5. 執行指令 `localectl set-locale LANG=<LANG_NAME>` 切換到需求語系
+      > `<LANG_NAME>` 請取代為 1. 或 4. 中查詢到的語系名稱
+  6. 若設定為生效，請先退出 WSL，並透過以下指令重新啟動 WSL
+
+      ```Powershell
+      wsl -t <MACHINE_NAME>
+      wsl -d <MACHINE_NAME>
+      ```
 
 - 安裝 sudo，並新增預設的登入使用者
 
@@ -214,3 +261,6 @@ WSL 預設啟動的發佈版會是第一個安裝的發佈版，若要切換預�
 - [Installing and Using 'Clear' Command | Linux Guide](https://ioflood.com/blog/install-clear-command-linux/)
 - [Podman - Guide 2 WSL](https://www.guide2wsl.com/podman/)
 - [Running podman rootless gives ERRO[0000] cannot setup namespace using newuidmap: exit status 1 #2788](https://github.com/containers/podman/issues/2788)
+- [Dockerfile - eniocarboni/docker-rockylinux-systemd](https://github.com/eniocarboni/docker-rockylinux-systemd/blob/main/Dockerfile)
+- [Systemd support is now available in WSL!](https://devblogs.microsoft.com/commandline/systemd-support-is-now-available-in-wsl/#set-the-systemd-flag-set-in-your-wsl-distro-settings)
+- [RHEL 安裝 locale](https://hackmd.io/@yzai/S1vMGJiqq)
