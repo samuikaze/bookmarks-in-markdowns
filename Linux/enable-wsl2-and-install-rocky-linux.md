@@ -297,6 +297,8 @@ WSL 預設啟動的發佈版會是第一個安裝的發佈版，若要切換預�
 ## VirtualBox 與 WSL 相容
 
 若系統中有安裝 VirtualBox，且啟用 WSL 的方式是透過 Hyper-V 的方式，則可透過以下方式讓 VirtualBox 與 WSL 相容
+> 請注意，VirtualBox 版本若低於 6.1 版，無法透過此方式與 WSL 共存
+
 > VirtualBox 主要是與 Hyper-V 不相容，因此若啟動 WSL 非使用 Hyper-V 者，不須執行此設定
 
 1. 打開 VirtualBox 安裝資料夾，右鍵打開終端機或複製其路徑，並在終端機中切換到此路徑
