@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD014 -->
 <!-- markdownlint-disable MD028 -->
 <!-- markdownlint-disable MD033 -->
 
@@ -212,6 +213,8 @@
     ```
 
 7. 讓 kubectl 指令可以不用 sudo 執行
+
+    > 若套用下面指令後執行 kubectl 仍然回報權限問題，請檢查系統環境變數中是否存在 `KUBECONFIG`，將其修改為 `$HOME/.kube/config` 或執行 `unset KUBECONFIG` 將其移除即可
 
     ```console
     $ mkdir -p $HOME/.kube
@@ -634,6 +637,7 @@ $ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bas
               --repo https://kubernetes.github.io/ingress-nginx \
               --namespace ingress-nginx --create-namespace
           ```
+
     </details>
 
     <details>
@@ -1204,6 +1208,7 @@ Kubernete 官方於 2023/08/31 公告由 Google 所維護的倉庫將於 2023/09
 - [Metrics server not working in Kubernetes cluster](https://stackoverflow.com/a/64029310)
 - [How to make k8s cpu and memory HPA work together?](https://stackoverflow.com/a/73555411)
 - [[Markdown] An option to highlight a "Note" and "Warning" using blockquote (Beta)](https://github.com/orgs/community/discussions/16925)
+- [KUBECONFIG 環境變數](https://kubernetes.io/zh-cn/docs/concepts/configuration/organize-cluster-access-kubeconfig/#kubeconfig-env-var)
 
 ## 返回目錄
 
