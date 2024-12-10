@@ -1062,13 +1062,41 @@ Kubernete 官方於 2023/08/31 公告由 Google 所維護的倉庫將於 2023/09
       $ kubectl version --short
       ```
 
-  2. 透過以下指令查詢目前最新版本的版本號碼
+  2. 先確定要升級到哪一版的 Kubernetes，先修改 /etc/yun.repos.d/kubernetes.repo
+
+      > Kubernetes 版本號碼可以在[這個頁面](https://kubernetes.io/zh-cn/releases/)查詢
+
+      > 請注意，Kubernetes 不可以跨版本升級，例如: 不支援 `1.29.x` 升級到 `1.31.x` 的升級，必須要先升級到 `1.30.x` 後再進行 `1.31.x` 的升級
+
+      > `/etc/yum.repos.d/kubernetes.repo` 為安裝時新增的 Kubernetes Repository 定義檔，若檔名不叫這個，請更改為正確的檔名
+
+      ```shell
+      # vim /etc/yum.repos.d/kubernetes.repo
+      ```
+
+      修改檔案中版本號碼的部分
+
+      > 此檔案需要管理員權限才能進行修改
+
+      ```ini
+      [kubernetes]
+      name=Kubernetes
+      ; 將 <VERSION> 改為要升級的版本號碼，例: 1.31
+      baseurl=https://pkgs.k8s.io/core:/stable:/v<VERSION>/rpm/
+      enabled=1
+      gpgcheck=1
+      ; 將 <VERSION> 改為要升級的版本號碼，例: 1.31
+      gpgkey=https://pkgs.k8s.io/core:/stable:/v<VERSION>/rpm/repodata/repomd.xml.key
+      exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+      ```
+
+  3. 透過以下指令查詢目前最新版本的版本號碼
 
       ```console
       # dnf list --showduplicates kubeadm --disableexcludes=kubernetes
       ```
 
-  3. 先透過以下指令將結點騰空
+  4. 先透過以下指令將結點騰空
 
       > 將 `<NODE_TO_DRAIN>` 取代為你要騰空的控制面節點名稱
 
@@ -1076,26 +1104,26 @@ Kubernete 官方於 2023/08/31 公告由 Google 所維護的倉庫將於 2023/09
       # kubectl drain <NODE_TO_DRAIN> --ignore-daemonsets
       ```
 
-  4. 執行下面指令更新 kubeadm 版本
+  5. 執行下面指令更新 kubeadm 版本
       > `<VERSION>` 請取代為你要更新的版本號碼，例如: `1.26.12`
 
       ```console
       # dnf install -y kubeadm-'<VERSION>-*' --disableexcludes=kubernetes
       ```
 
-  5. 透過下面指令驗證安裝的 kubeadm 版本
+  6. 透過下面指令驗證安裝的 kubeadm 版本
 
       ```console
       $ kubeadm version
       ```
 
-  6. 透過下面指令驗證升級計畫
+  7. 透過下面指令驗證升級計畫
 
       ```console
       # kubeadm upgrade plan
       ```
 
-  7. 執行下面指令套用升級
+  8. 執行下面指令套用升級
       > `<VERSION>` 請取代為你要更新的版本號碼，例如: `1.26.12`
 
       > 過程會詢問是否確定要執行升級，輸入 `y` 即可
@@ -1104,7 +1132,7 @@ Kubernete 官方於 2023/08/31 公告由 Google 所維護的倉庫將於 2023/09
       # kubeadm upgrade apply v<VERSION>
       ```
 
-  8. 待指令成功執行後，會看到類似下面的輸出，表示升級成功
+  9. 待指令成功執行後，會看到類似下面的輸出，表示升級成功
 
       ```console
       [upgrade/successful] SUCCESS! Your cluster was upgraded to "v1.29.x". Enjoy!
@@ -1112,8 +1140,8 @@ Kubernete 官方於 2023/08/31 公告由 Google 所維護的倉庫將於 2023/09
       [upgrade/kubelet] Now that your control plane is upgraded, please proceed with upgrading your kubelets if you haven't already done so.
       ```
 
-  9. 針對 Control Plane 節點有一個以上的情境，第二個節點開始請使用指令 `sudo kubeadm upgrade node` 進行升級
-  10. 透過下面指令升級 kubelet 與 kubectl
+  10. 針對 Control Plane 節點有一個以上的情境，第二個節點開始請使用指令 `sudo kubeadm upgrade node` 進行升級
+  11. 透過下面指令升級 kubelet 與 kubectl
       > `<VERSION>` 請取代為你要更新的版本號碼，例如: `1.26.12`
 
       > ⚠️ 這邊的版本號碼請與 kubeadm 的版本號碼一致
@@ -1122,21 +1150,21 @@ Kubernete 官方於 2023/08/31 公告由 Google 所維護的倉庫將於 2023/09
       # dnf install -y kubelet-'<VERSION>-*' kubectl-'<VERSION>-*' --disableexcludes=kubernetes
       ```
 
-  11. 透過以下指令重啟 `kubelet`
+  12. 透過以下指令重啟 `kubelet`
 
       ```console
       $ sudo systemctl daemon-reload
       $ sudo systemctl restart kubelet
       ```
 
-  12. 執行以下兩個指令更新 `~/.kube/config` 中的憑證
+  13. 執行以下兩個指令更新 `~/.kube/config` 中的憑證
 
       ```console
       $ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
       $ sudo chown $(id -u):$(id -g) $HOME/.kube/config
       ```
 
-  13. 解除節點的保護
+  14. 解除節點的保護
       > 將 `<NODE_TO_DRAIN>` 取代為你的節點名稱
 
       ```console
