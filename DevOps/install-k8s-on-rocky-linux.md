@@ -1195,9 +1195,19 @@ Kubernete 官方於 2023/08/31 公告由 Google 所維護的倉庫將於 2023/09
 
 ## 重新啟動系統後遇到 /etc/kubernetes/admin.conf 權限被拒問題
 
-如果遇到這個問題，請確認 `KUBECONFIG` 這個環境變數是否存在，若存在，請確定其指定的位置中包含有 `~/.kube/config` 位置，若未包含該位置，可以將該位置增加到 `KUBECONFIG` 環境變數中，也可以直接透過指令 `unset $KUBECONFIG` 將該環境變數移除，就可以順利解決問題了。
+如果遇到這個問題，請確認 `KUBECONFIG` 這個環境變數是否存在，若存在，請確定其指定的位置中包含有 `~/.kube/config` 位置，若未包含該位置，可以將該位置增加到 `KUBECONFIG` 環境變數中，也可以直接透過指令 `unset KUBECONFIG` 將該環境變數移除，就可以順利解決問題了。
 
 - [返回目錄](#目錄)
+
+## 讓 Kubernetes 支援 Samba 協定
+
+若要讓 Kubernetes 支援 Samba 協定，需要安裝 [csi-driver-smb](https://github.com/kubernetes-csi/csi-driver-smb)，透過以下指令進行安裝
+
+> 若這個 CSI Driver 要執行於 Control Plane 上，請務必加上 `--set controller.runOnControlPlane=true` 參數
+
+```bash
+$ helm install csi-driver-smb csi-driver-smb/csi-driver-smb --namespace kube-system --version v1.16.0 --set controller.runOnControlPlane=true
+```
 
 ## 參考資料
 
@@ -1244,6 +1254,7 @@ Kubernete 官方於 2023/08/31 公告由 Google 所維護的倉庫將於 2023/09
 - [How to make k8s cpu and memory HPA work together?](https://stackoverflow.com/a/73555411)
 - [[Markdown] An option to highlight a "Note" and "Warning" using blockquote (Beta)](https://github.com/orgs/community/discussions/16925)
 - [KUBECONFIG 環境變數](https://kubernetes.io/zh-cn/docs/concepts/configuration/organize-cluster-access-kubeconfig/#kubeconfig-env-var)
+- [kubernetes-csi/csi-driver-smb - GitHub](https://github.com/kubernetes-csi/csi-driver-smb)
 
 ## 返回目錄
 
